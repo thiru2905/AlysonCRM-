@@ -35,8 +35,18 @@ export interface LogicTip {
   reason: string;
 }
 
+/** Four rubric dimensions (0–25 each) that sum to the overall relevance score. */
+export interface AIScoreFactors {
+  titleSpecificity: number;
+  skillSignal: number;
+  booleanStructure: number;
+  poolBalance: number;
+}
+
 export interface LinkedInAIScoreResult {
   score: number;
+  /** Present when the model returned a rubric breakdown (sum equals score). */
+  scoreFactors?: AIScoreFactors;
   poolEstimate: PoolEstimate;
   recommendedMode: SearchMode;
   summary: string;

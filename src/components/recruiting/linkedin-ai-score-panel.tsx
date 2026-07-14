@@ -163,6 +163,14 @@ export function LinkedInAIScorePanel({
               </div>
               <div className="min-w-0 space-y-1">
                 <p className="text-sm font-medium">{result.summary}</p>
+                {result.scoreFactors && (
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground sm:grid-cols-4">
+                    <span>Titles {result.scoreFactors.titleSpecificity}/25</span>
+                    <span>Skills {result.scoreFactors.skillSignal}/25</span>
+                    <span>Logic {result.scoreFactors.booleanStructure}/25</span>
+                    <span>Pool {result.scoreFactors.poolBalance}/25</span>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   <Badge variant="outline">{POOL_LABELS[result.poolEstimate]}</Badge>
                   {result.recommendedMode !== mode && (
