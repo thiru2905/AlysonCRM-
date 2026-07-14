@@ -1,0 +1,191 @@
+import {
+  Boxes,
+  FolderKanban,
+  Bot,
+  FlaskConical,
+  BookOpen,
+  Sparkles,
+  LayoutDashboard,
+  Network,
+  Chrome,
+  Briefcase,
+  UsersRound,
+  HeartHandshake,
+  Megaphone,
+  Home,
+  Landmark,
+  ShieldCheck,
+  Link2,
+  Layers,
+  Wand2,
+  type LucideIcon,
+} from "lucide-react";
+
+
+export interface NavItem {
+  label: string;
+  to: string;
+  icon: LucideIcon;
+  shortcut?: string;
+  description: string;
+  section: "overview" | "primitives" | "flavors";
+  accent?: "ai";
+}
+
+export const NAV: NavItem[] = [
+  {
+    label: "Overview",
+    to: "/",
+    icon: LayoutDashboard,
+    shortcut: "G H",
+    description: "Approvals, active workers, signal at a glance.",
+    section: "overview",
+  },
+  {
+    label: "Data Sources",
+    to: "/entities",
+    icon: Boxes,
+    shortcut: "G E",
+    description: "People, companies, and objects the OS reasons about.",
+    section: "primitives",
+  },
+  {
+    label: "Work",
+    to: "/work",
+    icon: FolderKanban,
+    shortcut: "G P",
+    description: "Projects, phases, tasks, and subtasks — executed by humans and workers.",
+    section: "primitives",
+  },
+
+  {
+    label: "Workers",
+    to: "/workers",
+    icon: Bot,
+    shortcut: "G W",
+    description: "AI agents. What they do, what they need, what they cost.",
+    section: "primitives",
+  },
+  {
+    label: "Browser Workers",
+    to: "/browser-workers",
+    icon: Chrome,
+    shortcut: "G B",
+    description: "Desktop browser fleet. Sessions, queue, screenshots.",
+    section: "primitives",
+  },
+  {
+    label: "Experiments",
+    to: "/experiments",
+    icon: FlaskConical,
+    shortcut: "G X",
+    description: "Prompts, models, and workflows compared in the open.",
+    section: "primitives",
+  },
+  {
+    label: "Knowledge",
+    to: "/knowledge",
+    icon: BookOpen,
+    shortcut: "G K",
+    description: "Sources of truth the OS reads from and writes to.",
+    section: "primitives",
+  },
+  {
+    label: "Relationships",
+    to: "/relationships",
+    icon: Network,
+    shortcut: "G I",
+    description: "The interactive graph of people, companies, and every action.",
+    section: "primitives",
+  },
+  {
+    label: "Predictions",
+    to: "/predictions",
+    icon: Sparkles,
+    shortcut: "G R",
+    description: "Forecasts and inferences, with confidence and provenance.",
+    section: "primitives",
+  },
+  {
+    label: "Flavors",
+    to: "/flavors",
+    icon: Layers,
+    shortcut: "G F",
+    description: "CRM-shaped apps, tuned per team. One core, many surfaces.",
+    section: "flavors",
+  },
+  {
+    label: "CRM",
+    to: "/crm",
+    icon: Briefcase,
+    shortcut: "G C",
+    description: "Leads, customers, and opportunities — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Recruiting",
+    to: "/recruiting",
+    icon: UsersRound,
+    shortcut: "G U",
+    description: "Roles, candidates, and outreach — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Customer Success",
+    to: "/success",
+    icon: HeartHandshake,
+    shortcut: "G S",
+    description: "Retention, expansion, and QBRs — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Marketing",
+    to: "/marketing",
+    icon: Megaphone,
+    shortcut: "G M",
+    description: "Campaigns, audiences, and experiments — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Affiliate Outreach",
+    to: "/affiliate",
+    icon: Link2,
+    shortcut: "G A",
+    description: "Partners, payouts, and outbound — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Real Estate",
+    to: "/real-estate",
+    icon: Home,
+    shortcut: "G L",
+    description: "Listings, showings, and offers — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Mortgage",
+    to: "/mortgage",
+    icon: Landmark,
+    shortcut: "G O",
+    description: "Applications, underwriting, and closings — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "Insurance",
+    to: "/insurance",
+    icon: ShieldCheck,
+    shortcut: "G N",
+    description: "Quotes, policies, and claims — driven by Alyson.",
+    section: "flavors",
+  },
+  {
+    label: "New flavor",
+    to: "/flavors/new",
+    icon: Wand2,
+    shortcut: "G +",
+    description: "Describe your team. Alyson scaffolds a flavor.",
+    section: "flavors",
+    accent: "ai",
+  },
+];
+

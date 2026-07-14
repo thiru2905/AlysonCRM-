@@ -1,0 +1,25 @@
+export const ROUTES = [
+  { path: "/", slug: "home" },
+  { path: "/entities", slug: "entities" },
+  { path: "/entities/demo", slug: "entities-demo" },
+  { path: "/projects", slug: "projects" },
+  { path: "/tasks", slug: "tasks" },
+  { path: "/workers", slug: "workers" },
+  { path: "/browser-workers", slug: "browser-workers" },
+  { path: "/experiments", slug: "experiments" },
+  { path: "/knowledge", slug: "knowledge" },
+  { path: "/relationships", slug: "relationships" },
+  { path: "/predictions", slug: "predictions" },
+  { path: "/crm", slug: "crm" },
+  { path: "/recruiting", slug: "recruiting" },
+  { path: "/success", slug: "success" },
+  { path: "/marketing", slug: "marketing" },
+  { path: "/real-estate", slug: "real-estate" },
+  { path: "/mortgage", slug: "mortgage" },
+  { path: "/insurance", slug: "insurance" },
+  { path: "/affiliate", slug: "affiliate" },
+  { path: "/flavors", slug: "flavors" },
+  { path: "/flavors/new", slug: "flavors-new" },
+] as const;
+
+export type Route = (typeof ROUTES)[number];
