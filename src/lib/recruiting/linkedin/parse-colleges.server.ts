@@ -9,6 +9,7 @@ import {
   parseCollegesHeuristic,
   type ParseCollegesResult,
 } from "./parse-colleges";
+import { extractJsonObject } from "./deepseek-json";
 
 const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
 
@@ -20,13 +21,11 @@ Rules:
 - Names should work in LinkedIn's school: filter
 - Remove duplicates, footnotes, rankings, locations-only lines, and non-school noise
 - Preserve distinct campuses as separate entries when clearly different (e.g. IIT Delhi vs IIT Bombay)
-- Maximum ${MAX_BULK_COLLEGE_COUNT} colleges`;
+- Maximum ${MAX_BULK_COLLEGE_COUNT} colleges
+- Keep each name concise (under 120 characters)`;
 
-function extractJson(text: string): unknown {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fenced ? fenced[1].trim() : trimmed;
-  return JSON.parse(raw);
+function collegeMaxTokens(rawLength: number): number {
+  return Math.min(8192, Math.max(4000, 2000 + Math.ceil(rawLength / 8)));
 }
 
 export async function parseCollegesWithAI(raw: string): Promise<ParseCollegesResult> {
@@ -59,7 +58,7 @@ export async function parseCollegesWithAI(raw: string): Promise<ParseCollegesRes
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,
-      max_tokens: 4000,
+      max_tokens: collegeMaxTokens(text.length),
     }),
   });
 
@@ -71,16 +70,16 @@ export async function parseCollegesWithAI(raw: string): Promise<ParseCollegesRes
   }
 
   const payload = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
   };
   const content = payload.choices?.[0]?.message?.content;
   if (!content) throw new Error("DeepSeek returned an empty response.");
 
   let parsed: unknown;
   try {
-    parsed = extractJson(content);
+    parsed = extractJsonObject(content);
   } catch {
-    throw new Error("DeepSeek returned invalid JSON. Try again or use quick split.");
+    return { colleges: parseCollegesHeuristic(text), source: "heuristic" };
   }
 
   const obj =

@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { z } from "zod";
+import { extractJsonObject, computeScoreMaxTokens } from "./deepseek-json";
 import { analyzeQuality } from "./optimizer";
 import { buildBooleanQuery } from "./query-builder";
 import type {
@@ -132,10 +133,11 @@ Analyze the recruiter's LinkedIn search configuration and help them maximize REL
 Rules:
 - OR within a group widens the pool but adds noise; flag generic OR terms (e.g. "engineer", "AI", "developer") that should be removed or replaced with specific titles/skills.
 - AND between groups tightens the pool; flag combinations that likely return zero results.
-- termActions: you MUST classify EVERY value in currentJobTitles, previousJobTitles, skills, keywords, and universities.
-  Use action "remove" for generic/noisy terms the user should delete (e.g. "ai", "developer", "ml" alone).
-  Use action "keep" for specific high-signal terms the user should keep (e.g. "Machine Learning Engineer", "PyTorch").
-  Do not skip any filter value — each one gets either keep or remove/replace.
+- termActions: include ONLY terms that should be removed or replaced (action "remove" or "replace").
+  Do NOT list terms that are fine — omitted terms are treated as keep automatically.
+  For large lists (20+ keywords or 15+ colleges), flag the worst offenders only (generic, duplicate, city-only, or overly narrow school names) — do not enumerate every good entry.
+  Use action "remove" for generic/noisy terms (e.g. "developer", "Rank", "GPA" alone when they add noise).
+  Use action "replace" sparingly when a clearer synonym exists.
 - For group use ONLY these exact strings: currentJobTitles, previousJobTitles, skills, keywords, universities
 - For logicTips.field use ONLY: keywords, skills, jobTitles, previousJobTitles, universities
 - recommendedMode must be exactly: precision, balanced, or broad
@@ -492,6 +494,7 @@ function buildUserPrompt(req: LinkedInAIScoreRequest): string {
   const { config, mode, query, includeLowSignal } = req;
   const quality = analyzeQuality(config, mode, includeLowSignal);
   const fullQuery = query || buildBooleanQuery(config);
+  const termCount = countScorableTerms(req);
 
   return JSON.stringify(
     {
@@ -499,6 +502,11 @@ function buildUserPrompt(req: LinkedInAIScoreRequest): string {
       includeLowSignal,
       booleanQuery: fullQuery,
       logic: config.logic,
+      filterTermCount: termCount,
+      analysisNote:
+        termCount > 60
+          ? "Large search: in termActions only flag remove/replace for the worst terms; do not list every keep."
+          : undefined,
       filters: {
         currentJobTitles: config.currentJobTitles,
         previousJobTitles: config.previousJobTitles,
@@ -524,23 +532,22 @@ function buildUserPrompt(req: LinkedInAIScoreRequest): string {
   );
 }
 
-function extractJson(text: string): unknown {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fenced ? fenced[1].trim() : trimmed;
-  return JSON.parse(raw);
+function countScorableTerms(req: LinkedInAIScoreRequest): number {
+  const c = req.config;
+  return (
+    c.currentJobTitles.length +
+    c.previousJobTitles.length +
+    c.skills.length +
+    c.keywords.length +
+    c.universities.length
+  );
 }
 
-export async function scoreLinkedInSearch(
-  req: LinkedInAIScoreRequest
-): Promise<LinkedInAIScoreResult> {
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "DEEPSEEK_API_KEY is not configured. Add it to your .env file to use AI scoring."
-    );
-  }
-
+async function callDeepSeekScore(
+  apiKey: string,
+  req: LinkedInAIScoreRequest,
+  maxTokens: number
+): Promise<{ content: string; finishReason?: string }> {
   const res = await fetch(DEEPSEEK_API_URL, {
     method: "POST",
     headers: {
@@ -555,7 +562,7 @@ export async function scoreLinkedInSearch(
       ],
       response_format: { type: "json_object" },
       temperature: 0.45,
-      max_tokens: 2600,
+      max_tokens: maxTokens,
     }),
   });
 
@@ -567,16 +574,52 @@ export async function scoreLinkedInSearch(
   }
 
   const payload = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string }; finish_reason?: string }[];
   };
-  const content = payload.choices?.[0]?.message?.content;
+  const choice = payload.choices?.[0];
+  const content = choice?.message?.content;
   if (!content) throw new Error("DeepSeek returned an empty response.");
+
+  return { content, finishReason: choice?.finish_reason };
+}
+
+export async function scoreLinkedInSearch(
+  req: LinkedInAIScoreRequest
+): Promise<LinkedInAIScoreResult> {
+  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "DEEPSEEK_API_KEY is not configured. Add it to your .env file to use AI scoring."
+    );
+  }
+
+  const termCount = countScorableTerms(req);
+  let maxTokens = computeScoreMaxTokens(termCount);
+  let response = await callDeepSeekScore(apiKey, req, maxTokens);
+
+  if (response.finishReason === "length" && maxTokens < 8192) {
+    maxTokens = 8192;
+    response = await callDeepSeekScore(apiKey, req, maxTokens);
+  }
 
   let parsed: unknown;
   try {
-    parsed = extractJson(content);
+    parsed = extractJsonObject(response.content);
   } catch {
-    throw new Error("DeepSeek returned invalid JSON. Try analyzing again.");
+    if (maxTokens < 8192) {
+      response = await callDeepSeekScore(apiKey, req, 8192);
+      try {
+        parsed = extractJsonObject(response.content);
+      } catch {
+        throw new Error(
+          `DeepSeek returned invalid JSON (${termCount} filter terms — response may have been truncated). Try removing some keywords/colleges or analyze again.`
+        );
+      }
+    } else {
+      throw new Error(
+        `DeepSeek returned invalid JSON (${termCount} filter terms). Try removing some keywords/colleges and analyze again.`
+      );
+    }
   }
 
   try {
