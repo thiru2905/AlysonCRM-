@@ -17,6 +17,7 @@ import {
   Pencil,
   Wand2,
   Lightbulb,
+  ListPlus,
 } from "lucide-react";
 
 import { PageContainer, PageHeader } from "@/components/shell/Page";
@@ -35,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { LinkedInAIScorePanel } from "@/components/recruiting/linkedin-ai-score-panel";
+import { CollegeBulkImportDialog } from "@/components/recruiting/college-bulk-import-dialog";
 import { useLinkedInStore } from "@/lib/recruiting/linkedin-store";
 import {
   buildTermHighlightsForGroup,
@@ -56,6 +58,7 @@ import {
   TARGET_OPTIONS,
 } from "@/lib/recruiting/linkedin/link-builder";
 import { dedupe } from "@/lib/recruiting/linkedin/query-builder";
+import { mergeCollegeLists } from "@/lib/recruiting/linkedin/parse-colleges";
 import {
   MODE_OPTIONS,
   buildOptimizedQuery,
@@ -178,6 +181,7 @@ function LinkedInBuilderPage() {
   const [includeLowSignal, setIncludeLowSignal] = React.useState(false);
   const [queryOverride, setQueryOverride] = React.useState<string | null>(null);
   const [saveName, setSaveName] = React.useState("");
+  const [collegeBulkOpen, setCollegeBulkOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [aiResult, setAiResult] = React.useState<LinkedInAIScoreResult | null>(null);
 
@@ -280,6 +284,15 @@ function LinkedInBuilderPage() {
   function addAllColleges() {
     patch({ universities: [...COLLEGE_FILTER_SUGGESTIONS] });
     notify("Added all target colleges", "info");
+  }
+
+  function addBulkColleges(colleges: string[]) {
+    const merged = mergeCollegeLists(config.universities, colleges);
+    patch({ universities: merged });
+    notify(
+      `Added ${merged.length - config.universities.length} college${merged.length - config.universities.length === 1 ? "" : "s"}`,
+      "success"
+    );
   }
 
   function resetAll() {
@@ -562,7 +575,23 @@ function LinkedInBuilderPage() {
                   <Button type="button" size="sm" variant="outline" onClick={addAllColleges}>
                     Add all 10 colleges
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setCollegeBulkOpen(true)}
+                    className="gap-1.5"
+                  >
+                    <ListPlus className="size-3.5" />
+                    Paste list…
+                  </Button>
                 </div>
+                <CollegeBulkImportDialog
+                  open={collegeBulkOpen}
+                  onOpenChange={setCollegeBulkOpen}
+                  existing={config.universities}
+                  onAdd={addBulkColleges}
+                />
                 <TagInput
                   value={config.universities}
                   onChange={(v) => patch({ universities: v })}

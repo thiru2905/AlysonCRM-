@@ -12,6 +12,7 @@ import type {
   LinkedInAIScoreRequest,
   LinkedInAIScoreResult,
 } from "./linkedin/ai-score";
+import type { ParseCollegesResult } from "./linkedin/parse-colleges";
 
 // ---------------------------------------------------------------------------
 // TanStack Start server functions. These run only on the server; provider
@@ -185,4 +186,11 @@ export const scoreLinkedInSearchFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<LinkedInAIScoreResult> => {
     const { scoreLinkedInSearch } = await import("./linkedin/ai-score.server");
     return scoreLinkedInSearch(data);
+  });
+
+export const parseCollegesFn = createServerFn({ method: "POST" })
+  .validator((payload: { text: string }) => payload)
+  .handler(async ({ data }): Promise<ParseCollegesResult> => {
+    const { parseCollegesWithAI } = await import("./linkedin/parse-colleges.server");
+    return parseCollegesWithAI(data.text);
   });
