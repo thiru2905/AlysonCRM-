@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { dedupe } from "./query-builder";
+import { promoteAchievementKeywords, mapKeywordToAchievement } from "./achievements";
 import type { LinkedInSearchConfig, MatchLogic, SearchMode } from "./types";
 
 export type TermGroup =
@@ -11,6 +12,7 @@ export type TermGroup =
   | "previousJobTitles"
   | "skills"
   | "keywords"
+  | "achievements"
   | "universities";
 
 export type PoolEstimate = "too_narrow" | "balanced" | "too_broad";
@@ -69,6 +71,7 @@ const TERM_GROUPS: TermGroup[] = [
   "previousJobTitles",
   "skills",
   "keywords",
+  "achievements",
   "universities",
 ];
 
@@ -96,12 +99,18 @@ export function applyAIScoreRecommendations(
   };
 
   for (const group of TERM_GROUPS) {
-    next[group] = [...config[group]];
+    next[group] = [...(config[group] ?? [])];
   }
 
   for (const action of result.termActions) {
     if (!TERM_GROUPS.includes(action.group)) continue;
     if (action.action === "remove") {
+      if (action.group === "keywords") {
+        const achievement = mapKeywordToAchievement(action.term);
+        if (achievement) {
+          next.achievements = dedupe([...next.achievements, achievement]);
+        }
+      }
       next[action.group] = stripTerm(next[action.group], action.term);
     } else if (action.action === "replace" && action.replacement?.trim()) {
       next[action.group] = replaceTerm(
@@ -114,7 +123,11 @@ export function applyAIScoreRecommendations(
 
   for (const add of result.suggestedAdditions) {
     if (!TERM_GROUPS.includes(add.group)) continue;
-    next[add.group] = dedupe([...next[add.group], ...add.terms]);
+    if (add.group === "achievements") {
+      next.achievements = dedupe([...next.achievements, ...add.terms]);
+    } else {
+      next[add.group] = dedupe([...next[add.group], ...add.terms]);
+    }
   }
 
   for (const tip of result.logicTips) {
@@ -123,7 +136,7 @@ export function applyAIScoreRecommendations(
     }
   }
 
-  return next;
+  return promoteAchievementKeywords(next);
 }
 
 export function scoreTone(score: number): "success" | "warning" | "destructive" {
@@ -177,7 +190,7 @@ export function pruneAiResultAfterConfigChange(
 ): LinkedInAIScoreResult {
   const present = new Set<string>();
   for (const group of TERM_GROUPS) {
-    for (const term of config[group]) {
+    for (const term of config[group] ?? []) {
       present.add(termKey(term));
     }
   }
@@ -202,7 +215,7 @@ export function hasRemainingDropTerms(
   if (dropKeys.size === 0) return false;
 
   for (const group of TERM_GROUPS) {
-    for (const term of config[group]) {
+    for (const term of config[group] ?? []) {
       if (dropKeys.has(termKey(term))) return true;
     }
   }
@@ -217,7 +230,7 @@ export function countRemainingDropTerms(
   const dropKeys = getDropTermKeys(result);
   let count = 0;
   for (const group of TERM_GROUPS) {
-    for (const term of config[group]) {
+    for (const term of config[group] ?? []) {
       if (dropKeys.has(termKey(term))) count += 1;
     }
   }
@@ -241,6 +254,7 @@ export function removeDropTermsFromConfig(
     previousJobTitles: strip(config.previousJobTitles),
     skills: strip(config.skills),
     keywords: strip(config.keywords),
+    achievements: strip(config.achievements ?? []),
     universities: strip(config.universities),
   };
 }

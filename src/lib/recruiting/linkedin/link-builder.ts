@@ -29,8 +29,17 @@ import type {
   SearchMode,
 } from "./types";
 
-export { buildSearchUrl } from "./facet-url";
-import { buildSearchUrl, hasEncodedExperienceFilter, formatExperienceBucketsLabel, hasEncodedSchoolFilter, formatSchoolsLabel } from "./facet-url";
+export { buildSearchUrl, buildSalesNavigatorUrl } from "./facet-url";
+import {
+  buildSearchUrl,
+  buildSalesNavigatorUrl,
+  hasEncodedExperienceFilter,
+  formatExperienceBucketsLabel,
+  hasEncodedSchoolFilter,
+  formatSchoolsLabel,
+  getSalesNavFacetSchools,
+  getSalesNavManualSchools,
+} from "./facet-url";
 
 export const TARGET_OPTIONS: { value: LinkedInTarget; label: string }[] = [
   { value: "people", label: "LinkedIn People Search" },
@@ -39,21 +48,54 @@ export const TARGET_OPTIONS: { value: LinkedInTarget; label: string }[] = [
 ];
 
 /** The keyword-searchable groups that are encoded into the URL. */
-function includedFilters(config: LinkedInSearchConfig): NamedFilter[] {
+function includedFilters(
+  config: LinkedInSearchConfig,
+  target: LinkedInTarget
+): NamedFilter[] {
   const out: NamedFilter[] = [];
   const push = (label: string, values: string[]) => {
     const v = dedupe(values);
     if (v.length) out.push({ label, value: v.join(", ") });
   };
-  push("Current job titles", config.currentJobTitles);
-  push("Previous job titles", config.previousJobTitles);
+
+  if (target === "sales") {
+    if (config.currentJobTitles.length) {
+      out.push({
+        label: "Current job titles (in URL filter)",
+        value: dedupe(config.currentJobTitles).join(", "),
+      });
+    }
+    push("Previous job titles", config.previousJobTitles);
+  } else {
+    push("Current job titles", config.currentJobTitles);
+    push("Previous job titles", config.previousJobTitles);
+  }
+
   push("Skills", config.skills);
   push("Keywords", config.keywords);
+  push("Achievements", config.achievements ?? []);
   if (config.universities.length) {
-    out.push({
-      label: "Colleges (school: filter)",
-      value: formatSchoolsLabel(config),
-    });
+    if (target === "sales") {
+      const facet = getSalesNavFacetSchools(config);
+      const manual = getSalesNavManualSchools(config);
+      if (facet.length) {
+        out.push({
+          label: "Colleges (School filter in URL)",
+          value: facet.join(", "),
+        });
+      }
+      if (manual.length) {
+        out.push({
+          label: "Colleges (paste into School filter)",
+          value: manual.join(", "),
+        });
+      }
+    } else {
+      out.push({
+        label: "Colleges (school: filter)",
+        value: formatSchoolsLabel(config),
+      });
+    }
   }
   push("Excluded keywords", config.excludedKeywords);
   push("Excluded titles", config.excludedJobTitles);
@@ -73,7 +115,10 @@ function includedFilters(config: LinkedInSearchConfig): NamedFilter[] {
  * LinkedIn's own filter panel than stuffed into the keyword box, and most
  * cannot be reliably pre-filled via a public URL — so we list them.
  */
-function manualFilters(config: LinkedInSearchConfig): NamedFilter[] {
+function manualFilters(
+  config: LinkedInSearchConfig,
+  target: LinkedInTarget
+): NamedFilter[] {
   const out: NamedFilter[] = [];
   const push = (label: string, values: string[]) => {
     const v = dedupe(values);
@@ -86,6 +131,8 @@ function manualFilters(config: LinkedInSearchConfig): NamedFilter[] {
   push("Industry", config.industries);
   if (!hasEncodedSchoolFilter(config)) {
     push("School / university", config.universities);
+  } else if (target === "sales") {
+    push("School / university (paste manually)", getSalesNavManualSchools(config));
   }
   push("Language", config.languages);
   push("Seniority level", config.seniority);
@@ -111,9 +158,10 @@ function manualFilters(config: LinkedInSearchConfig): NamedFilter[] {
 export function buildUrlFromQuery(
   target: LinkedInTarget,
   query: string,
-  config?: LinkedInSearchConfig
+  config?: LinkedInSearchConfig,
+  options: BuildOptions = {}
 ): string {
-  return buildSearchUrl(target, query, config);
+  return buildSearchUrl(target, query, config, options);
 }
 
 interface BuildOptions {
@@ -134,7 +182,10 @@ export function buildSearch(
   const includeLowSignal = options.includeLowSignal ?? false;
 
   const query = buildModeQuery(config, mode, includeLowSignal);
-  const url = buildSearchUrl(target, query, config);
+  const url =
+    target === "sales"
+      ? buildSalesNavigatorUrl(config, mode, includeLowSignal)
+      : buildSearchUrl(target, query, config, { mode, includeLowSignal });
   const validation = validateConfig(config);
 
   // Merge in relevance/quality checks.
@@ -152,8 +203,8 @@ export function buildSearch(
     query,
     url,
     target,
-    includedFilters: includedFilters(config),
-    manualFilters: manualFilters(config),
+    includedFilters: includedFilters(config, target),
+    manualFilters: manualFilters(config, target),
     validation,
     titleQuery: buildTitleQuery(config, includeLowSignal),
     keywordQuery: buildKeywordQuery(config, mode, includeLowSignal),

@@ -16,7 +16,7 @@ export type LinkedInTarget = "people" | "sales" | "recruiter";
 
 /**
  * Search strategy:
- *  - precision: role AND skills AND keywords NOT excluded (most relevant)
+ *  - precision: role AND skills AND keywords AND achievements NOT excluded (most relevant)
  *  - balanced:  role AND skills (wider pool)
  *  - broad:     role OR skills OR keywords (maximum sourcing)
  */
@@ -27,6 +27,8 @@ export type Confidence = "high" | "medium" | "low";
 export interface LinkedInSearchConfig {
   // Free-text / boolean-matchable criteria
   keywords: string[];
+  /** Achievement / accolade filters (loose keyword OR groups). */
+  achievements: string[];
   skills: string[];
   currentJobTitles: string[];
   previousJobTitles: string[];
@@ -55,6 +57,7 @@ export interface LinkedInSearchConfig {
   // Per-group matching logic
   logic: {
     keywords: MatchLogic;
+    achievements: MatchLogic;
     skills: MatchLogic;
     jobTitles: MatchLogic;
     previousJobTitles: MatchLogic;
@@ -64,6 +67,7 @@ export interface LinkedInSearchConfig {
 
 export const EMPTY_CONFIG: LinkedInSearchConfig = {
   keywords: [],
+  achievements: [],
   skills: [],
   currentJobTitles: [],
   previousJobTitles: [],
@@ -86,6 +90,7 @@ export const EMPTY_CONFIG: LinkedInSearchConfig = {
   excludedLocations: [],
   logic: {
     keywords: "any",
+    achievements: "any",
     skills: "any",
     jobTitles: "any",
     previousJobTitles: "any",

@@ -12,6 +12,7 @@
 // ---------------------------------------------------------------------------
 
 import type { LinkedInSearchConfig, MatchLogic, QueryValidation } from "./types";
+import { formatAchievementGroup } from "./achievements";
 
 /** LinkedIn's keyword box practically breaks well before this; used to warn. */
 export const MAX_QUERY_LENGTH = 1000;
@@ -68,6 +69,7 @@ const group = formatGroup;
 export function resolveLogic(config: LinkedInSearchConfig) {
   return {
     keywords: config.logic.keywords ?? "any",
+    achievements: config.logic.achievements ?? "any",
     skills: config.logic.skills ?? "any",
     jobTitles: config.logic.jobTitles ?? "any",
     previousJobTitles: config.logic.previousJobTitles ?? "any",
@@ -97,6 +99,9 @@ export function buildPositiveQuery(config: LinkedInSearchConfig): string {
   parts.push(formatJobTitleGroups(config));
   parts.push(group(config.skills, logic.skills));
   parts.push(group(config.keywords, logic.keywords));
+  parts.push(
+    formatAchievementGroup(config.achievements ?? [], logic.achievements)
+  );
   parts.push(group(config.currentCompanies, "any"));
   parts.push(group(config.previousCompanies, "any"));
   parts.push(group(config.locations, "any"));

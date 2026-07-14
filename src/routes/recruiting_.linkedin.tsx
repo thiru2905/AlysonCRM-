@@ -18,6 +18,7 @@ import {
   Wand2,
   Lightbulb,
   ListPlus,
+  Trophy,
 } from "lucide-react";
 
 import { PageContainer, PageHeader } from "@/components/shell/Page";
@@ -59,6 +60,7 @@ import {
 } from "@/lib/recruiting/linkedin/link-builder";
 import { dedupe } from "@/lib/recruiting/linkedin/query-builder";
 import { mergeCollegeLists } from "@/lib/recruiting/linkedin/parse-colleges";
+import { ACHIEVEMENT_SUGGESTIONS } from "@/lib/recruiting/linkedin/achievements";
 import {
   MODE_OPTIONS,
   buildOptimizedQuery,
@@ -200,6 +202,11 @@ function LinkedInBuilderPage() {
       ),
       skills: buildTermHighlightsForGroup(aiResult, "skills", config.skills),
       keywords: buildTermHighlightsForGroup(aiResult, "keywords", config.keywords),
+      achievements: buildTermHighlightsForGroup(
+        aiResult,
+        "achievements",
+        config.achievements ?? []
+      ),
       universities: buildTermHighlightsForGroup(
         aiResult,
         "universities",
@@ -226,8 +233,8 @@ function LinkedInBuilderPage() {
   );
   const query = queryOverride ?? built.query;
   const url = React.useMemo(
-    () => buildUrlFromQuery(target, query, config),
-    [target, query, config]
+    () => buildUrlFromQuery(target, query, config, { mode, includeLowSignal }),
+    [target, query, config, mode, includeLowSignal]
   );
 
   const lowSignal = React.useMemo(() => getLowSignalTerms(config), [config]);
@@ -275,6 +282,20 @@ function LinkedInBuilderPage() {
       universities: exists
         ? config.universities.filter((x) => x.toLowerCase() !== college.toLowerCase())
         : [...config.universities, college],
+    };
+    setConfig(updated);
+    setQueryOverride(null);
+    syncAiHighlights(updated);
+  }
+
+  function toggleAchievement(achievement: string) {
+    const list = config.achievements ?? [];
+    const exists = list.some((x) => x.toLowerCase() === achievement.toLowerCase());
+    const updated = {
+      ...config,
+      achievements: exists
+        ? list.filter((x) => x.toLowerCase() !== achievement.toLowerCase())
+        : [...list, achievement],
     };
     setConfig(updated);
     setQueryOverride(null);
@@ -395,6 +416,7 @@ function LinkedInBuilderPage() {
     const s = linkedinSearches.find((x) => x.id === id);
     if (!s) return;
     setConfig({
+      ...EMPTY_CONFIG,
       ...s.config,
       logic: { ...EMPTY_CONFIG.logic, ...s.config.logic },
     });
@@ -416,6 +438,7 @@ function LinkedInBuilderPage() {
   addSummary("f-previous-title", "Previous job titles", config.previousJobTitles);
   addSummary("f-skills", "Skills", config.skills);
   addSummary("f-keywords", "Keywords", config.keywords);
+  addSummary("f-achievements", "Achievements", config.achievements ?? []);
   addSummary("f-current-company", "Current companies", config.currentCompanies);
   addSummary("f-previous-company", "Previous companies", config.previousCompanies);
   addSummary("f-locations", "Locations", config.locations);
@@ -552,6 +575,54 @@ function LinkedInBuilderPage() {
                   placeholder="Type any keyword, press Enter to add"
                   highlights={aiHighlights?.keywords}
                 />
+              </Field>
+
+              <Field
+                id="f-achievements"
+                label="Achievements"
+                hint="Loose search — OR synonyms"
+              >
+                <p className="text-xs text-muted-foreground">
+                  Profiles rarely use the exact same wording. Each achievement
+                  expands into related phrases (e.g. &quot;Kaggle Expert+&quot; also
+                  matches Master, Grandmaster, medals).
+                </p>
+                <div className="mb-2 mt-2">
+                  <LogicToggle
+                    value={config.logic.achievements ?? "any"}
+                    onChange={(v) => setLogic("achievements", v)}
+                  />
+                </div>
+                <TagInput
+                  value={config.achievements ?? []}
+                  onChange={(v) => patch({ achievements: v })}
+                  suggestions={ACHIEVEMENT_SUGGESTIONS}
+                  placeholder="e.g. Top 10% LeetCode, Hackathon winner"
+                  highlights={aiHighlights?.achievements}
+                />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {ACHIEVEMENT_SUGGESTIONS.map((achievement) => {
+                    const selected = (config.achievements ?? []).some(
+                      (x) => x.toLowerCase() === achievement.toLowerCase()
+                    );
+                    return (
+                      <button
+                        key={achievement}
+                        type="button"
+                        onClick={() => toggleAchievement(achievement)}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors",
+                          selected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background text-muted-foreground hover:border-primary/40"
+                        )}
+                      >
+                        <Trophy className="size-3 shrink-0 opacity-70" />
+                        {achievement}
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
             </CardContent>
           </Card>
@@ -1089,8 +1160,12 @@ function LinkedInBuilderPage() {
                   <Info className="size-4 text-primary" /> Sales Navigator &amp; Recruiter
                 </CardTitle>
                 <CardDescription>
-                  These tools have separate boxes. Paste each part into its own
-                  field (not everything into Keywords) for far better results.
+                  Sales Navigator splits filters across the left rail and the
+                  top keyword bar. The generated link pre-selects{" "}
+                  <strong>Years</strong>, <strong>Current title</strong>, and{" "}
+                  <strong>School</strong> (when we have LinkedIn ids). Skills
+                  and achievements go in the top keyword search — they won&apos;t
+                  appear as left-rail chips. Paste extras below if needed.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

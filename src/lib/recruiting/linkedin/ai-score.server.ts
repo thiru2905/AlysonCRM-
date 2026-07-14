@@ -6,6 +6,7 @@ import { z } from "zod";
 import { extractJsonObject, computeScoreMaxTokens } from "./deepseek-json";
 import { analyzeQuality } from "./optimizer";
 import { buildBooleanQuery } from "./query-builder";
+import { ACHIEVEMENT_SUGGESTIONS } from "./achievements";
 import type {
   AIScoreFactors,
   LinkedInAIScoreRequest,
@@ -21,6 +22,7 @@ const TERM_GROUPS = new Set<TermGroup>([
   "previousJobTitles",
   "skills",
   "keywords",
+  "achievements",
   "universities",
 ]);
 
@@ -42,6 +44,11 @@ const GROUP_ALIASES: Record<string, TermGroup> = {
   skill: "skills",
   keywords: "keywords",
   keyword: "keywords",
+  achievements: "achievements",
+  achievement: "achievements",
+  accolades: "achievements",
+  honors: "achievements",
+  honours: "achievements",
   universities: "universities",
   university: "universities",
   colleges: "universities",
@@ -52,6 +59,7 @@ const GROUP_ALIASES: Record<string, TermGroup> = {
 
 const LOGIC_FIELDS = new Set<keyof LinkedInSearchConfig["logic"]>([
   "keywords",
+  "achievements",
   "skills",
   "jobTitles",
   "previousJobTitles",
@@ -61,6 +69,8 @@ const LOGIC_FIELDS = new Set<keyof LinkedInSearchConfig["logic"]>([
 const LOGIC_ALIASES: Record<string, keyof LinkedInSearchConfig["logic"]> = {
   keywords: "keywords",
   keyword: "keywords",
+  achievements: "achievements",
+  achievement: "achievements",
   skills: "skills",
   skill: "skills",
   jobtitles: "jobTitles",
@@ -91,6 +101,7 @@ const resultSchema = z.object({
         "previousJobTitles",
         "skills",
         "keywords",
+        "achievements",
         "universities",
       ]),
       action: z.enum(["keep", "remove", "replace"]),
@@ -105,6 +116,7 @@ const resultSchema = z.object({
         "previousJobTitles",
         "skills",
         "keywords",
+        "achievements",
         "universities",
       ]),
       terms: z.array(z.string().min(1)).max(8),
@@ -115,6 +127,7 @@ const resultSchema = z.object({
     z.object({
       field: z.enum([
         "keywords",
+        "achievements",
         "skills",
         "jobTitles",
         "previousJobTitles",
@@ -136,10 +149,12 @@ Rules:
 - termActions: include ONLY terms that should be removed or replaced (action "remove" or "replace").
   Do NOT list terms that are fine — omitted terms are treated as keep automatically.
   For large lists (20+ keywords or 15+ colleges), flag the worst offenders only (generic, duplicate, city-only, or overly narrow school names) — do not enumerate every good entry.
-  Use action "remove" for generic/noisy terms (e.g. "developer", "Rank", "GPA" alone when they add noise).
-  Use action "replace" sparingly when a clearer synonym exists.
-- For group use ONLY these exact strings: currentJobTitles, previousJobTitles, skills, keywords, universities
-- For logicTips.field use ONLY: keywords, skills, jobTitles, previousJobTitles, universities
+  Use action "remove" for generic/noisy terms (e.g. "developer", vague "Rank" or "GPA" in keywords when they belong in achievements).
+  Accolade terms (LeetCode, Kaggle, hackathons, Olympiad, honors, medals, competitive programming) belong in the achievements group — NOT keywords.
+  When removing accolade-like keywords, use group "keywords" with action "remove" (the app moves them to achievements on apply).
+  In suggestedAdditions, use group "achievements" with preset-style labels (e.g. "Kaggle Expert+", "Top 10% LeetCode", "Hackathon winner") when the search targets high performers but achievements is empty or thin.
+- For group use ONLY these exact strings: currentJobTitles, previousJobTitles, skills, keywords, achievements, universities
+- For logicTips.field use ONLY: keywords, achievements, skills, jobTitles, previousJobTitles, universities
 - recommendedMode must be exactly: precision, balanced, or broad
 - poolEstimate must be exactly: too_narrow, balanced, or too_broad
 
@@ -464,6 +479,7 @@ function enrichTermActions(
     { group: "previousJobTitles", terms: req.config.previousJobTitles },
     { group: "skills", terms: req.config.skills },
     { group: "keywords", terms: req.config.keywords },
+    { group: "achievements", terms: req.config.achievements ?? [] },
     { group: "universities", terms: req.config.universities },
   ];
 
@@ -507,11 +523,13 @@ function buildUserPrompt(req: LinkedInAIScoreRequest): string {
         termCount > 60
           ? "Large search: in termActions only flag remove/replace for the worst terms; do not list every keep."
           : undefined,
+      achievementPresets: ACHIEVEMENT_SUGGESTIONS,
       filters: {
         currentJobTitles: config.currentJobTitles,
         previousJobTitles: config.previousJobTitles,
         skills: config.skills,
         keywords: config.keywords,
+        achievements: config.achievements ?? [],
         universities: config.universities,
         currentCompanies: config.currentCompanies,
         previousCompanies: config.previousCompanies,
@@ -539,6 +557,7 @@ function countScorableTerms(req: LinkedInAIScoreRequest): number {
     c.previousJobTitles.length +
     c.skills.length +
     c.keywords.length +
+    (c.achievements ?? []).length +
     c.universities.length
   );
 }

@@ -5,8 +5,10 @@
 // We map the recruiter's range onto every overlapping bucket.
 // ---------------------------------------------------------------------------
 
-import { dedupe } from "./query-builder";
-import type { LinkedInSearchConfig, LinkedInTarget } from "./types";
+import { dedupe, formatSchoolGroup, resolveLogic } from "./query-builder";
+import { buildKeywordQuery } from "./optimizer";
+import { lookupLinkedInSchoolId } from "./school-ids";
+import type { LinkedInSearchConfig, LinkedInTarget, SearchMode } from "./types";
 
 export interface ExperienceBucket {
   id: string;
@@ -41,6 +43,11 @@ export function mapYearsRangeToBucketIds(
 
 function bucketById(id: string): ExperienceBucket | undefined {
   return EXPERIENCE_BUCKETS.find((bucket) => bucket.id === id);
+}
+
+/** Escape characters that break Sales Navigator filters:List() grammar. */
+function encodeSalesNavFacetText(text: string): string {
+  return text.trim().replace(/,/g, "%2C");
 }
 
 /** Remove school: boolean group when schools are passed as native SCHOOL facets. */
@@ -98,7 +105,7 @@ function buildSalesNavigatorYearsFilter(bucketIds: string[]): string {
     .map((id) => {
       const bucket = bucketById(id);
       if (!bucket) return "";
-      return `(id:${id},text:${bucket.label},selectionType:INCLUDED)`;
+      return `(id:${id},text:${encodeSalesNavFacetText(bucket.label)},selectionType:INCLUDED)`;
     })
     .filter(Boolean)
     .join(",");
@@ -106,30 +113,91 @@ function buildSalesNavigatorYearsFilter(bucketIds: string[]): string {
   return `(type:YEARS_OF_EXPERIENCE,values:List(${values}))`;
 }
 
-function buildSalesNavigatorSchoolFilter(schools: string[]): string {
-  const values = schools
+function buildSalesNavigatorTitleFilter(titles: string[]): string | null {
+  if (titles.length === 0) return null;
+  const values = titles
     .map(
-      (school) => `(text:${school.trim()},selectionType:INCLUDED)`
+      (title) =>
+        `(text:${encodeSalesNavFacetText(title)},selectionType:INCLUDED)`
     )
     .join(",");
+  return `(type:CURRENT_TITLE,values:List(${values}))`;
+}
 
+function buildSalesNavigatorSchoolFilter(
+  schools: { id: string; name: string }[]
+): string | null {
+  if (schools.length === 0) return null;
+  const values = schools
+    .map(
+      ({ id, name }) =>
+        `(id:${id},text:${encodeSalesNavFacetText(name)},selectionType:INCLUDED)`
+    )
+    .join(",");
   return `(type:SCHOOL,values:List(${values}))`;
 }
 
-/** Filters-only query object — keywords go in the separate `keywords` URL param. */
-function buildSalesNavigatorFiltersQuery(
-  bucketIds: string[],
-  schools: string[]
-): string | null {
+function partitionSchoolsForSalesNav(schools: string[]): {
+  facetSchools: { id: string; name: string }[];
+  keywordSchools: string[];
+} {
+  const facetSchools: { id: string; name: string }[] = [];
+  const keywordSchools: string[] = [];
+
+  for (const school of dedupe(schools)) {
+    const trimmed = school.trim();
+    const id = lookupLinkedInSchoolId(trimmed);
+    if (id) facetSchools.push({ id, name: trimmed });
+    else keywordSchools.push(trimmed);
+  }
+
+  return { facetSchools, keywordSchools };
+}
+
+/**
+ * Sales Navigator URL with structured filters (title, school, years) plus a
+ * separate keywords param for skills / achievements — not one giant OR blob.
+ */
+export function buildSalesNavigatorUrl(
+  config: LinkedInSearchConfig,
+  mode: SearchMode = "precision",
+  includeLowSignal = false
+): string {
+  const bucketIds = getExperienceBucketIds(config);
+  const { facetSchools, keywordSchools } = partitionSchoolsForSalesNav(
+    getSchoolNames(config)
+  );
+  const titles = dedupe(config.currentJobTitles);
+
+  let keywordText = buildKeywordQuery(config, mode, includeLowSignal).trim();
+  if (keywordSchools.length) {
+    const schoolKw = formatSchoolGroup(
+      keywordSchools,
+      resolveLogic(config).universities
+    );
+    keywordText = [keywordText, schoolKw].filter(Boolean).join(" AND ");
+  }
+
   const filters: string[] = [];
-  if (bucketIds.length) {
-    filters.push(buildSalesNavigatorYearsFilter(bucketIds));
+  if (bucketIds.length) filters.push(buildSalesNavigatorYearsFilter(bucketIds));
+  const titleFilter = buildSalesNavigatorTitleFilter(titles);
+  if (titleFilter) filters.push(titleFilter);
+  const schoolFilter = buildSalesNavigatorSchoolFilter(facetSchools);
+  if (schoolFilter) filters.push(schoolFilter);
+
+  const params = new URLSearchParams();
+  if (keywordText) params.set("keywords", keywordText);
+  if (filters.length) {
+    params.set(
+      "query",
+      `(spellCorrectionEnabled:true,filters:List(${filters.join(",")}))`
+    );
   }
-  if (schools.length) {
-    filters.push(buildSalesNavigatorSchoolFilter(schools));
-  }
-  if (filters.length === 0) return null;
-  return `(spellCorrectionEnabled:true,filters:List(${filters.join(",")}))`;
+
+  const qs = params.toString();
+  return qs
+    ? `https://www.linkedin.com/sales/search/people?${qs}`
+    : "https://www.linkedin.com/sales/search/people";
 }
 
 export function getExperienceBucketIds(
@@ -165,11 +233,24 @@ export function formatSchoolsLabel(config: LinkedInSearchConfig): string {
   return getSchoolNames(config).join(", ");
 }
 
-/** Build a search URL that includes native years-of-experience facets when set. */
+/** Schools we can pre-select in a Sales Navigator URL (have LinkedIn ids). */
+export function getSalesNavFacetSchools(config: LinkedInSearchConfig): string[] {
+  return partitionSchoolsForSalesNav(getSchoolNames(config)).facetSchools.map(
+    (s) => s.name
+  );
+}
+
+/** Schools that must stay in keywords or be pasted manually in Sales Nav. */
+export function getSalesNavManualSchools(config: LinkedInSearchConfig): string[] {
+  return partitionSchoolsForSalesNav(getSchoolNames(config)).keywordSchools;
+}
+
+/** Build a search URL that includes native facets when set. */
 export function buildSearchUrl(
   target: LinkedInTarget,
   query: string,
-  config?: LinkedInSearchConfig
+  config?: LinkedInSearchConfig,
+  options?: { mode?: SearchMode; includeLowSignal?: boolean }
 ): string {
   const bucketIds = config ? getExperienceBucketIds(config) : [];
   const schools = config ? getSchoolNames(config) : [];
@@ -177,18 +258,16 @@ export function buildSearchUrl(
   const hasFacets = bucketIds.length > 0 || schools.length > 0;
 
   switch (target) {
-    case "sales": {
-      if (!trimmed && !hasFacets) {
-        return "https://www.linkedin.com/sales/search/people";
-      }
-      const params = new URLSearchParams();
-      // Keywords: one encoding via URLSearchParams (avoids broken %2522 quotes).
-      const keywordText = schools.length ? stripSchoolGroup(trimmed) : trimmed;
-      if (keywordText) params.set("keywords", keywordText);
-      const filterQuery = buildSalesNavigatorFiltersQuery(bucketIds, schools);
-      if (filterQuery) params.set("query", filterQuery);
-      return `https://www.linkedin.com/sales/search/people?${params.toString()}`;
-    }
+    case "sales":
+      return config
+        ? buildSalesNavigatorUrl(
+            config,
+            options?.mode ?? "precision",
+            options?.includeLowSignal ?? false
+          )
+        : trimmed
+          ? `https://www.linkedin.com/sales/search/people?${new URLSearchParams({ keywords: trimmed }).toString()}`
+          : "https://www.linkedin.com/sales/search/people";
     case "recruiter": {
       const params = new URLSearchParams();
       if (trimmed) params.set("keywords", trimmed);

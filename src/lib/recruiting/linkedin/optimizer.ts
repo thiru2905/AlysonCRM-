@@ -18,6 +18,10 @@ import {
   normalizeTerm,
   resolveLogic,
 } from "./query-builder";
+import {
+  expandAchievementPhrases,
+  formatAchievementGroup,
+} from "./achievements";
 import type {
   Confidence,
   LinkedInSearchConfig,
@@ -152,6 +156,7 @@ export function buildModeQuery(
   const previousTitles = dedupe(config.previousJobTitles).filter(keep);
   const skills = dedupe(config.skills).filter(keep);
   const keywords = dedupe(config.keywords).filter(keep);
+  const achievements = dedupe(config.achievements ?? []);
   const universities = dedupe(config.universities).filter(keep);
   const excluded = dedupe([
     ...config.excludedKeywords,
@@ -167,15 +172,26 @@ export function buildModeQuery(
   ].filter(Boolean);
   const titleBlock = titleParts.join(" AND ");
   const universityBlock = formatSchoolGroup(universities, logic.universities);
+  const achievementBlock = formatAchievementGroup(
+    achievements,
+    logic.achievements
+  );
 
   let positive = "";
   if (mode === "broad") {
     positive = formatGroup(
-      dedupe([...currentTitles, ...previousTitles, ...skills, ...keywords, ...universities]),
+      dedupe([
+        ...currentTitles,
+        ...previousTitles,
+        ...skills,
+        ...keywords,
+        ...universities,
+        ...expandAchievementPhrases(achievements),
+      ]),
       "any"
     );
   } else if (mode === "balanced") {
-    positive = [titleBlock, formatGroup(skills, logic.skills), universityBlock]
+    positive = [titleBlock, formatGroup(skills, logic.skills), universityBlock, achievementBlock]
       .filter(Boolean)
       .join(" AND ");
   } else {
@@ -183,6 +199,7 @@ export function buildModeQuery(
       titleBlock,
       formatGroup(skills, logic.skills),
       formatGroup(keywords, logic.keywords),
+      achievementBlock,
       universityBlock,
     ]
       .filter(Boolean)
@@ -222,17 +239,31 @@ export function buildKeywordQuery(
   includeLowSignal = false
 ): string {
   const { skills, keywords, excluded } = collectTerms(config, includeLowSignal);
+  const achievementBlock = formatAchievementGroup(
+    config.achievements ?? [],
+    config.logic.achievements ?? "any"
+  );
   const not = excluded.length ? ` NOT ${formatGroup(excluded, "any")}` : "";
 
   let positive = "";
   if (mode === "broad") {
-    positive = formatGroup(dedupe([...skills, ...keywords]), "any");
+    positive = formatGroup(
+      dedupe([
+        ...skills,
+        ...keywords,
+        ...expandAchievementPhrases(config.achievements ?? []),
+      ]),
+      "any"
+    );
   } else if (mode === "balanced") {
-    positive = formatGroup(skills, config.logic.skills);
+    positive = [formatGroup(skills, config.logic.skills), achievementBlock]
+      .filter(Boolean)
+      .join(" AND ");
   } else {
     positive = [
       formatGroup(skills, config.logic.skills),
       formatGroup(keywords, config.logic.keywords),
+      achievementBlock,
     ]
       .filter(Boolean)
       .join(" AND ");
@@ -370,7 +401,7 @@ export const MODE_OPTIONS: {
   {
     value: "precision",
     label: "Precision",
-    hint: "Role AND skills AND keywords — most relevant, smaller pool.",
+    hint: "Role AND skills AND keywords AND achievements — most relevant, smaller pool.",
   },
   {
     value: "balanced",
