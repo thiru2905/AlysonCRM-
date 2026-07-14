@@ -222,8 +222,8 @@ function LinkedInBuilderPage() {
   );
   const query = queryOverride ?? built.query;
   const url = React.useMemo(
-    () => buildUrlFromQuery(target, query),
-    [target, query]
+    () => buildUrlFromQuery(target, query, config),
+    [target, query, config]
   );
 
   const lowSignal = React.useMemo(() => getLowSignalTerms(config), [config]);
@@ -547,9 +547,9 @@ function LinkedInBuilderPage() {
             <CardHeader>
               <CardTitle className="text-base">Target colleges</CardTitle>
               <CardDescription>
-                Pick the schools you want to source from. Candidates matching any
-                selected college are included (OR). Apply the School filter in
-                LinkedIn for best results.
+                Colleges use LinkedIn&apos;s <code className="text-xs">school:</code>{" "}
+                filter in the search query and link. Pick schools (OR) or add your
+                own.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -640,7 +640,9 @@ function LinkedInBuilderPage() {
             <CardHeader>
               <CardTitle className="text-base">Experience &amp; level</CardTitle>
               <CardDescription>
-                Applied inside LinkedIn&apos;s own filters (listed on the right).
+                Years of experience are encoded in the generated search link.
+                Other fields here still need LinkedIn&apos;s filter panel (listed
+                on the right).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1051,7 +1053,7 @@ function LinkedInBuilderPage() {
           </Card>
 
           {/* Split queries for Sales Navigator / Recruiter */}
-          {(built.titleQuery || built.keywordQuery) && (
+          {(built.titleQuery || built.keywordQuery || built.schoolQuery) && (
             <Card className="border-primary/40">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -1094,6 +1096,23 @@ function LinkedInBuilderPage() {
                     </div>
                     <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 font-mono text-xs">
                       {built.keywordQuery}
+                    </pre>
+                  </div>
+                )}
+                {built.schoolQuery && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Paste into “School” filter</Label>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => copyText(built.schoolQuery, "School query")}
+                      >
+                        <Copy /> Copy
+                      </Button>
+                    </div>
+                    <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 font-mono text-xs">
+                      {built.schoolQuery}
                     </pre>
                   </div>
                 )}
@@ -1149,7 +1168,7 @@ function LinkedInBuilderPage() {
                   disabled={hasBlocking}
                   onClick={() =>
                     window.open(
-                      buildUrlFromQuery("people", query),
+                      buildUrlFromQuery("people", query, config),
                       "_blank",
                       "noopener,noreferrer"
                     )
@@ -1163,7 +1182,7 @@ function LinkedInBuilderPage() {
                   disabled={hasBlocking}
                   onClick={() =>
                     window.open(
-                      buildUrlFromQuery("sales", query),
+                      buildUrlFromQuery("sales", query, config),
                       "_blank",
                       "noopener,noreferrer"
                     )

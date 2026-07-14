@@ -5,11 +5,9 @@
 // Search, Sales Navigator, or Recruiter from a recruiter's config.
 //
 // Design principles:
-//   * The keyword query holds ONLY job titles, skills, keywords and exclusions.
-//   * Everything else (location, companies, industry, school, experience,
-//     seniority, employment type, open-to-work) is a NATIVE LinkedIn filter and
-//     is surfaced for manual application — never crammed into keywords (which
-//     creates noise) and never faked as a URL parameter.
+//   * The keyword query holds job titles, skills, keywords and exclusions.
+//   * Native facets (years of experience, location, seniority, etc.) are encoded
+//     in the URL when LinkedIn supports them; the rest are listed for manual apply.
 //   * No auth, no cookies, no scraping.
 //
 // Kept separate from React so it stays testable and reusable.
@@ -21,6 +19,7 @@ import {
   analyzeQuality,
   buildTitleQuery,
   buildKeywordQuery,
+  buildSchoolQuery,
 } from "./optimizer";
 import type {
   BuiltSearch,
@@ -29,6 +28,9 @@ import type {
   NamedFilter,
   SearchMode,
 } from "./types";
+
+export { buildSearchUrl } from "./facet-url";
+import { buildSearchUrl, hasEncodedExperienceFilter, formatExperienceBucketsLabel, hasEncodedSchoolFilter, formatSchoolsLabel } from "./facet-url";
 
 export const TARGET_OPTIONS: { value: LinkedInTarget; label: string }[] = [
   { value: "people", label: "LinkedIn People Search" },
@@ -47,11 +49,22 @@ function includedFilters(config: LinkedInSearchConfig): NamedFilter[] {
   push("Previous job titles", config.previousJobTitles);
   push("Skills", config.skills);
   push("Keywords", config.keywords);
-  push("Colleges", config.universities);
+  if (config.universities.length) {
+    out.push({
+      label: "Colleges (school: filter)",
+      value: formatSchoolsLabel(config),
+    });
+  }
   push("Excluded keywords", config.excludedKeywords);
   push("Excluded titles", config.excludedJobTitles);
   push("Excluded companies", config.excludedCompanies);
   push("Excluded locations", config.excludedLocations);
+  if (hasEncodedExperienceFilter(config)) {
+    out.push({
+      label: "Years of experience (in URL)",
+      value: formatExperienceBucketsLabel(config),
+    });
+  }
   return out;
 }
 
@@ -71,14 +84,19 @@ function manualFilters(config: LinkedInSearchConfig): NamedFilter[] {
   push("Current company", config.currentCompanies);
   push("Past company", config.previousCompanies);
   push("Industry", config.industries);
-  push("School / university", config.universities);
+  if (!hasEncodedSchoolFilter(config)) {
+    push("School / university", config.universities);
+  }
   push("Language", config.languages);
   push("Seniority level", config.seniority);
   push("Function / department", config.functions);
   push("Employment type", config.employmentTypes);
   push("Education level", config.education);
 
-  if (config.minYears != null || config.maxYears != null) {
+  if (
+    !hasEncodedExperienceFilter(config) &&
+    (config.minYears != null || config.maxYears != null)
+  ) {
     const min = config.minYears ?? 0;
     const max = config.maxYears != null ? config.maxYears : "+";
     out.push({ label: "Years of experience", value: `${min}–${max} years` });
@@ -89,20 +107,13 @@ function manualFilters(config: LinkedInSearchConfig): NamedFilter[] {
   return out;
 }
 
-function buildUrl(target: LinkedInTarget, query: string): string {
-  const enc = encodeURIComponent(query);
-  switch (target) {
-    case "sales":
-      // Sales Navigator pre-fills only the keyword box via the URL; the rich
-      // facet query object is not publicly documented, so we keep it honest.
-      return `https://www.linkedin.com/sales/search/people?keywords=${enc}`;
-    case "recruiter":
-      // Recruiter requires a seat; only the keyword search is reliably shareable.
-      return `https://www.linkedin.com/talent/search?keywords=${enc}`;
-    case "people":
-    default:
-      return `https://www.linkedin.com/search/results/people/?keywords=${enc}&origin=FACETED_SEARCH`;
-  }
+/** Build a URL from query text plus optional native facets from the config. */
+export function buildUrlFromQuery(
+  target: LinkedInTarget,
+  query: string,
+  config?: LinkedInSearchConfig
+): string {
+  return buildSearchUrl(target, query, config);
 }
 
 interface BuildOptions {
@@ -123,7 +134,7 @@ export function buildSearch(
   const includeLowSignal = options.includeLowSignal ?? false;
 
   const query = buildModeQuery(config, mode, includeLowSignal);
-  const url = buildUrl(target, query);
+  const url = buildSearchUrl(target, query, config);
   const validation = validateConfig(config);
 
   // Merge in relevance/quality checks.
@@ -146,13 +157,7 @@ export function buildSearch(
     validation,
     titleQuery: buildTitleQuery(config, includeLowSignal),
     keywordQuery: buildKeywordQuery(config, mode, includeLowSignal),
+    schoolQuery: buildSchoolQuery(config, includeLowSignal),
   };
 }
 
-/** Build a URL from an already-generated (possibly hand-edited) query string. */
-export function buildUrlFromQuery(
-  target: LinkedInTarget,
-  query: string
-): string {
-  return buildUrl(target, query);
-}

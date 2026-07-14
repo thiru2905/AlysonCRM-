@@ -14,6 +14,7 @@
 import {
   dedupe,
   formatGroup,
+  formatSchoolGroup,
   normalizeTerm,
   resolveLogic,
 } from "./query-builder";
@@ -165,7 +166,7 @@ export function buildModeQuery(
     formatGroup(previousTitles, logic.previousJobTitles),
   ].filter(Boolean);
   const titleBlock = titleParts.join(" AND ");
-  const universityBlock = formatGroup(universities, logic.universities);
+  const universityBlock = formatSchoolGroup(universities, logic.universities);
 
   let positive = "";
   if (mode === "broad") {
@@ -239,6 +240,17 @@ export function buildKeywordQuery(
 
   if (positive && not) return `${positive}${not}`;
   return positive || not.trim();
+}
+
+/** Boolean for LinkedIn's native School filter (Sales Navigator / Recruiter). */
+export function buildSchoolQuery(
+  config: LinkedInSearchConfig,
+  includeLowSignal = false
+): string {
+  const logic = resolveLogic(config);
+  const keep = (t: string) => includeLowSignal || !classifyTerm(t).isLowSignal;
+  const universities = dedupe(config.universities).filter(keep);
+  return formatSchoolGroup(universities, logic.universities);
 }
 
 /** Terms the recruiter typed that are too generic to search on their own. */

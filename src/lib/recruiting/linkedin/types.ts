@@ -128,6 +128,8 @@ export interface BuiltSearch {
   // Split queries for Sales Navigator / Recruiter, which have dedicated boxes:
   //   titleQuery   -> paste into the "Job title" / "Current title" filter
   //   keywordQuery -> paste into the "Keywords" box (skills + keywords only)
+  //   schoolQuery  -> paste into the "School" filter
   titleQuery: string;
   keywordQuery: string;
+  schoolQuery: string;
 }

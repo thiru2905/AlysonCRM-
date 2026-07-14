@@ -53,6 +53,15 @@ export function formatGroup(terms: string[], logic: MatchLogic): string {
   return `(${cleaned.join(logic === "all" ? " AND " : " OR ")})`;
 }
 
+/** LinkedIn school filter syntax — school:"MIT" OR school:"Stanford University". */
+export function formatSchoolGroup(terms: string[], logic: MatchLogic): string {
+  const cleaned = dedupe(terms);
+  if (cleaned.length === 0) return "";
+  const parts = cleaned.map((term) => `school:${quote(term)}`);
+  if (parts.length === 1) return parts[0];
+  return `(${parts.join(logic === "all" ? " AND " : " OR ")})`;
+}
+
 const group = formatGroup;
 
 /** Resolve logic with safe defaults for configs saved before new fields existed. */
@@ -91,7 +100,7 @@ export function buildPositiveQuery(config: LinkedInSearchConfig): string {
   parts.push(group(config.currentCompanies, "any"));
   parts.push(group(config.previousCompanies, "any"));
   parts.push(group(config.locations, "any"));
-  parts.push(group(config.universities, logic.universities));
+  parts.push(formatSchoolGroup(config.universities, logic.universities));
   parts.push(group(config.languages, "any"));
 
   return parts.filter(Boolean).join(" AND ");
