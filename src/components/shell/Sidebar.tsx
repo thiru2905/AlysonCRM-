@@ -3,7 +3,7 @@ import { NAV } from "@/lib/nav";
 import { useShell } from "@/lib/shell";
 import { cn } from "@/lib/utils";
 import { ChevronsLeft, Command } from "lucide-react";
-import alysonLogo from "@/assets/alyson-logo.svg.asset.json";
+import { AlysonLogo } from "@/components/shell/AlysonLogo";
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar, setCommandOpen } = useShell();
@@ -22,15 +22,7 @@ export function Sidebar() {
       <div className="h-12 flex items-center px-3 gap-2 border-b border-border/60">
         {sidebarOpen ? (
           <>
-            <img
-              src={alysonLogo.url}
-              alt="Alyson"
-              height={22}
-              className="h-[22px] w-auto shrink-0"
-            />
-            <span className="text-mono text-[10px] text-muted-foreground ml-1 uppercase tracking-wider">
-              Agentic CRM+
-            </span>
+            <AlysonLogo size={28} wordmarkClassName="text-sm" />
             <button
               onClick={toggleSidebar}
               className="ml-auto p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition"
@@ -40,12 +32,7 @@ export function Sidebar() {
             </button>
           </>
         ) : (
-          <img
-            src={alysonLogo.url}
-            alt="Alyson"
-            className="h-7 w-7 shrink-0 object-cover object-left"
-            style={{ objectPosition: "0 50%" }}
-          />
+          <AlysonLogo size={28} showWordmark={false} className="mx-auto" />
         )}
       </div>
 
