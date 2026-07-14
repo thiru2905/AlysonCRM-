@@ -11,9 +11,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function resolveNitroPreset(): string {
   if (process.env.NITRO_PRESET) return process.env.NITRO_PRESET;
-  // Vercel sets VERCEL=1 during builds; use the Nitro vercel preset so output
-  // lands in .vercel/output (Build Output API) instead of .output/.
-  if (process.env.VERCEL) return "vercel";
+  // Vercel injects these during CI builds; Nitro must use the vercel preset so
+  // output lands in .vercel/output (Build Output API) instead of .output/.
+  if (process.env.VERCEL || process.env.VERCEL_ENV) return "vercel";
   return "node-server";
 }
 
