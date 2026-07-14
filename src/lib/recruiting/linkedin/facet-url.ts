@@ -43,8 +43,16 @@ function bucketById(id: string): ExperienceBucket | undefined {
   return EXPERIENCE_BUCKETS.find((bucket) => bucket.id === id);
 }
 
-function encodeFacetText(value: string): string {
-  return encodeURIComponent(value).replace(/%20/g, "%2520");
+/** Remove school: boolean group when schools are passed as native SCHOOL facets. */
+export function stripSchoolGroup(query: string): string {
+  const schoolGroup = /\((?:\s*school:"[^"]+"\s*(?:OR\s+)*)+\)/gi;
+  let out = query.replace(schoolGroup, "").trim();
+  out = out.replace(/\s+AND\s+AND\s+/gi, " AND ");
+  out = out.replace(/^\s*AND\s+/i, "");
+  out = out.replace(/\s+AND\s*$/i, "");
+  out = out.replace(/\(\s+AND\s+/g, "(");
+  out = out.replace(/\s+AND\s+\)/g, ")");
+  return out.trim();
 }
 
 /** Classic / Recruiter people search queryParameters entry. */
@@ -90,7 +98,7 @@ function buildSalesNavigatorYearsFilter(bucketIds: string[]): string {
     .map((id) => {
       const bucket = bucketById(id);
       if (!bucket) return "";
-      return `(id:${id},text:${encodeFacetText(bucket.label)},selectionType:INCLUDED)`;
+      return `(id:${id},text:${bucket.label},selectionType:INCLUDED)`;
     })
     .filter(Boolean)
     .join(",");
@@ -101,26 +109,18 @@ function buildSalesNavigatorYearsFilter(bucketIds: string[]): string {
 function buildSalesNavigatorSchoolFilter(schools: string[]): string {
   const values = schools
     .map(
-      (school) =>
-        `(text:${encodeFacetText(school.trim())},selectionType:INCLUDED)`
+      (school) => `(text:${school.trim()},selectionType:INCLUDED)`
     )
     .join(",");
 
   return `(type:SCHOOL,values:List(${values}))`;
 }
 
-function buildSalesNavigatorQueryObject(
-  query: string,
+/** Filters-only query object — keywords go in the separate `keywords` URL param. */
+function buildSalesNavigatorFiltersQuery(
   bucketIds: string[],
   schools: string[]
-): string {
-  const parts = ["spellCorrectionEnabled:true"];
-  const trimmed = query.trim();
-
-  if (trimmed) {
-    parts.push(`keywords:${encodeFacetText(trimmed)}`);
-  }
-
+): string | null {
   const filters: string[] = [];
   if (bucketIds.length) {
     filters.push(buildSalesNavigatorYearsFilter(bucketIds));
@@ -128,11 +128,8 @@ function buildSalesNavigatorQueryObject(
   if (schools.length) {
     filters.push(buildSalesNavigatorSchoolFilter(schools));
   }
-  if (filters.length) {
-    parts.push(`filters:List(${filters.join(",")})`);
-  }
-
-  return `(${parts.join(",")})`;
+  if (filters.length === 0) return null;
+  return `(spellCorrectionEnabled:true,filters:List(${filters.join(",")}))`;
 }
 
 export function getExperienceBucketIds(
@@ -184,8 +181,13 @@ export function buildSearchUrl(
       if (!trimmed && !hasFacets) {
         return "https://www.linkedin.com/sales/search/people";
       }
-      const queryObj = buildSalesNavigatorQueryObject(trimmed, bucketIds, schools);
-      return `https://www.linkedin.com/sales/search/people?query=${encodeURIComponent(queryObj)}`;
+      const params = new URLSearchParams();
+      // Keywords: one encoding via URLSearchParams (avoids broken %2522 quotes).
+      const keywordText = schools.length ? stripSchoolGroup(trimmed) : trimmed;
+      if (keywordText) params.set("keywords", keywordText);
+      const filterQuery = buildSalesNavigatorFiltersQuery(bucketIds, schools);
+      if (filterQuery) params.set("query", filterQuery);
+      return `https://www.linkedin.com/sales/search/people?${params.toString()}`;
     }
     case "recruiter": {
       const params = new URLSearchParams();
