@@ -8,6 +8,10 @@ import {
 } from "./types";
 import { candidateSearchFiltersSchema } from "./validation";
 import type { UsageSummary } from "./usage";
+import type {
+  LinkedInAIScoreRequest,
+  LinkedInAIScoreResult,
+} from "./linkedin/ai-score";
 
 // ---------------------------------------------------------------------------
 // TanStack Start server functions. These run only on the server; provider
@@ -170,7 +174,15 @@ export const statusFn = createServerFn({ method: "GET" }).handler(
         CANDIDATE_PROVIDER: process.env.CANDIDATE_PROVIDER ?? "mock",
         CORESIGNAL_API_KEY: Boolean(process.env.CORESIGNAL_API_KEY),
         PDL_API_KEY: Boolean(process.env.PDL_API_KEY),
+        DEEPSEEK_API_KEY: Boolean(process.env.DEEPSEEK_API_KEY),
       },
     };
   }
 );
+
+export const scoreLinkedInSearchFn = createServerFn({ method: "POST" })
+  .validator((payload: LinkedInAIScoreRequest) => payload)
+  .handler(async ({ data }): Promise<LinkedInAIScoreResult> => {
+    const { scoreLinkedInSearch } = await import("./linkedin/ai-score.server");
+    return scoreLinkedInSearch(data);
+  });

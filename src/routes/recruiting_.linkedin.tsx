@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { LinkedInAIScorePanel } from "@/components/recruiting/linkedin-ai-score-panel";
 import { useLinkedInStore } from "@/lib/recruiting/linkedin-store";
 import {
   EMPTY_CONFIG,
@@ -246,6 +247,21 @@ function LinkedInBuilderPage() {
       "success",
       "Vague terms expanded, generic noise removed."
     );
+  }
+
+  function applyAIRecommendations({
+    config: nextConfig,
+    mode: nextMode,
+    clearQueryOverride,
+  }: {
+    config: LinkedInSearchConfig;
+    mode?: SearchMode;
+    clearQueryOverride: boolean;
+  }) {
+    setConfig(nextConfig);
+    if (nextMode) setMode(nextMode);
+    if (clearQueryOverride) setQueryOverride(null);
+    notify("Applied AI recommendations", "success", "Filters updated from AI analysis.");
   }
 
   // Remove a low-signal term everywhere and, if it has expansions, add them.
@@ -725,6 +741,15 @@ function LinkedInBuilderPage() {
               </label>
             </CardContent>
           </Card>
+
+          <LinkedInAIScorePanel
+            config={config}
+            mode={mode}
+            query={query}
+            includeLowSignal={includeLowSignal}
+            hasBlocking={hasBlocking}
+            onApply={applyAIRecommendations}
+          />
 
           {/* Validation */}
           {(errors.length > 0 ||
