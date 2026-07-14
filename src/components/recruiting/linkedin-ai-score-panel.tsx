@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   applyAIScoreRecommendations,
+  getDropTermKeys,
   POOL_LABELS,
   scoreTone,
   type LinkedInAIScoreResult,
@@ -39,6 +40,7 @@ type Props = {
     mode?: SearchMode;
     clearQueryOverride: boolean;
   }) => void;
+  onRemoveRedTags?: () => void;
 };
 
 export function LinkedInAIScorePanel({
@@ -50,6 +52,7 @@ export function LinkedInAIScorePanel({
   result,
   onResultChange,
   onApply,
+  onRemoveRedTags,
 }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -82,7 +85,9 @@ export function LinkedInAIScorePanel({
   }
 
   const tone = result ? scoreTone(result.score) : null;
-  const removeCount = result?.termActions.filter((t) => t.action === "remove").length ?? 0;
+  const removeCount = result
+    ? getDropTermKeys(result).size
+    : 0;
   const replaceCount = result?.termActions.filter((t) => t.action === "replace").length ?? 0;
   const addCount = result?.suggestedAdditions.reduce((n, a) => n + a.terms.length, 0) ?? 0;
 
@@ -114,6 +119,16 @@ export function LinkedInAIScorePanel({
             )}
             {loading ? "Analyzing…" : "Analyze with AI"}
           </Button>
+          {result && removeCount > 0 && onRemoveRedTags && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={onRemoveRedTags}
+              className="gap-1.5"
+            >
+              Remove {removeCount} red tag{removeCount === 1 ? "" : "s"}
+            </Button>
+          )}
           {result && (removeCount > 0 || replaceCount > 0 || addCount > 0 || result.logicTips.length > 0) && (
             <Button size="sm" variant="outline" onClick={applyAll} className="gap-1.5">
               <Wand2 className="size-3.5" />

@@ -107,29 +107,44 @@ export function TagInput({
           "flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 text-sm shadow-sm focus-within:ring-2 focus-within:ring-ring"
         )}
       >
-        {value.map((tag) => (
+        {value.map((tag) => {
+          const tone = highlights?.[tag];
+          return (
           <span
             key={tag}
+            title={
+              tone === "drop"
+                ? "AI suggests removing this filter — click × to delete"
+                : tone === "keep"
+                  ? "AI recommends keeping this filter"
+                  : undefined
+            }
             className={cn(
-              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
-              highlights?.[tag] === "drop" &&
-                "border-destructive/30 bg-destructive/10 text-destructive",
-              highlights?.[tag] === "keep" &&
-                "border-success/30 bg-success/10 text-success",
-              !highlights?.[tag] && "border-transparent bg-secondary text-secondary-foreground"
+              "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium",
+              tone === "drop" &&
+                "border-destructive/50 bg-destructive/15 text-destructive ring-1 ring-destructive/20",
+              tone === "keep" &&
+                "border-success/50 bg-success/15 text-success ring-1 ring-success/20",
+              !tone && "border-transparent bg-secondary text-secondary-foreground"
             )}
           >
             {tag}
             <button
               type="button"
               onClick={() => remove(tag)}
-              className="text-muted-foreground hover:text-foreground"
+              className={cn(
+                "rounded-sm p-0.5 transition-colors",
+                tone === "drop"
+                  ? "text-destructive hover:bg-destructive/20"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
               aria-label={`Remove ${tag}`}
             >
               <X className="size-3" />
             </button>
           </span>
-        ))}
+          );
+        })}
         <input
           id={id}
           value={draft}

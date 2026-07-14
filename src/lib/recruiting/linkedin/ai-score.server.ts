@@ -131,7 +131,10 @@ Analyze the recruiter's LinkedIn search configuration and help them maximize REL
 Rules:
 - OR within a group widens the pool but adds noise; flag generic OR terms (e.g. "engineer", "AI", "developer") that should be removed or replaced with specific titles/skills.
 - AND between groups tightens the pool; flag combinations that likely return zero results.
-- termActions: use action "remove" or "replace" for bad terms; use "keep" for the strongest 3-8 terms total across all groups.
+- termActions: you MUST classify EVERY value in currentJobTitles, previousJobTitles, skills, keywords, and universities.
+  Use action "remove" for generic/noisy terms the user should delete (e.g. "ai", "developer", "ml" alone).
+  Use action "keep" for specific high-signal terms the user should keep (e.g. "Machine Learning Engineer", "PyTorch").
+  Do not skip any filter value — each one gets either keep or remove/replace.
 - For group use ONLY these exact strings: currentJobTitles, previousJobTitles, skills, keywords, universities
 - For logicTips.field use ONLY: keywords, skills, jobTitles, previousJobTitles, universities
 - recommendedMode must be exactly: precision, balanced, or broad
@@ -303,6 +306,41 @@ function normalizeParsedResult(raw: unknown): LinkedInAIScoreResult {
   return validated.data;
 }
 
+function enrichTermActions(
+  req: LinkedInAIScoreRequest,
+  result: LinkedInAIScoreResult
+): LinkedInAIScoreResult {
+  const groups: { group: TermGroup; terms: string[] }[] = [
+    { group: "currentJobTitles", terms: req.config.currentJobTitles },
+    { group: "previousJobTitles", terms: req.config.previousJobTitles },
+    { group: "skills", terms: req.config.skills },
+    { group: "keywords", terms: req.config.keywords },
+    { group: "universities", terms: req.config.universities },
+  ];
+
+  const seen = new Set<string>();
+  for (const action of result.termActions) {
+    seen.add(`${action.group}::${action.term.trim().toLowerCase()}`);
+  }
+
+  const termActions = [...result.termActions];
+  for (const { group, terms } of groups) {
+    for (const term of terms) {
+      const key = `${group}::${term.trim().toLowerCase()}`;
+      if (seen.has(key)) continue;
+      termActions.push({
+        term,
+        group,
+        action: "keep",
+        reason: "Strong enough signal to keep in this search.",
+      });
+      seen.add(key);
+    }
+  }
+
+  return { ...result, termActions };
+}
+
 function buildUserPrompt(req: LinkedInAIScoreRequest): string {
   const { config, mode, query, includeLowSignal } = req;
   const quality = analyzeQuality(config, mode, includeLowSignal);
@@ -395,7 +433,7 @@ export async function scoreLinkedInSearch(
   }
 
   try {
-    return normalizeParsedResult(parsed);
+    return enrichTermActions(req, normalizeParsedResult(parsed));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invalid AI response";
     throw new Error(message);

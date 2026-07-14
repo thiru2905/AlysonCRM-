@@ -130,23 +130,53 @@ export const POOL_LABELS: Record<PoolEstimate, string> = {
 
 export type TermHighlight = "keep" | "drop";
 
+function termKey(term: string): string {
+  return term.trim().toLowerCase();
+}
+
+/** Terms the AI flagged for removal/replacement (matched across all filter groups). */
+export function getDropTermKeys(result: LinkedInAIScoreResult): Set<string> {
+  const keys = new Set<string>();
+  for (const action of result.termActions) {
+    if (action.action === "remove" || action.action === "replace") {
+      keys.add(termKey(action.term));
+    }
+  }
+  return keys;
+}
+
 /** Map each tag to keep (green) or drop (red) after an AI analysis. */
 export function buildTermHighlightsForGroup(
   result: LinkedInAIScoreResult,
   group: TermGroup,
   terms: string[]
 ): Record<string, TermHighlight> {
-  const dropKeys = new Set<string>();
-  for (const action of result.termActions) {
-    if (action.group !== group) continue;
-    if (action.action === "remove" || action.action === "replace") {
-      dropKeys.add(action.term.trim().toLowerCase());
-    }
-  }
+  const dropKeys = getDropTermKeys(result);
 
   const out: Record<string, TermHighlight> = {};
   for (const term of terms) {
-    out[term] = dropKeys.has(term.trim().toLowerCase()) ? "drop" : "keep";
+    out[term] = dropKeys.has(termKey(term)) ? "drop" : "keep";
   }
   return out;
+}
+
+/** Remove every AI-flagged drop term from the searchable filter groups. */
+export function removeDropTermsFromConfig(
+  config: LinkedInSearchConfig,
+  result: LinkedInAIScoreResult
+): LinkedInSearchConfig {
+  const dropKeys = getDropTermKeys(result);
+  if (dropKeys.size === 0) return config;
+
+  const strip = (terms: string[]) =>
+    terms.filter((term) => !dropKeys.has(termKey(term)));
+
+  return {
+    ...config,
+    currentJobTitles: strip(config.currentJobTitles),
+    previousJobTitles: strip(config.previousJobTitles),
+    skills: strip(config.skills),
+    keywords: strip(config.keywords),
+    universities: strip(config.universities),
+  };
 }

@@ -38,6 +38,7 @@ import { LinkedInAIScorePanel } from "@/components/recruiting/linkedin-ai-score-
 import { useLinkedInStore } from "@/lib/recruiting/linkedin-store";
 import {
   buildTermHighlightsForGroup,
+  removeDropTermsFromConfig,
   type LinkedInAIScoreResult,
 } from "@/lib/recruiting/linkedin/ai-score";
 import {
@@ -301,6 +302,15 @@ function LinkedInBuilderPage() {
     notify("Applied AI recommendations", "success", "Filters updated from AI analysis.");
   }
 
+  function removeRedTags() {
+    if (!aiResult) return;
+    const next = removeDropTermsFromConfig(config, aiResult);
+    setConfig(next);
+    setQueryOverride(null);
+    clearAiResult();
+    notify("Removed AI-flagged filters", "success", "Red tags were deleted. Green tags were kept.");
+  }
+
   // Remove a low-signal term everywhere and, if it has expansions, add them.
   function expandTerm(t: TermClassification) {
     setConfig((c) => {
@@ -432,13 +442,13 @@ function LinkedInBuilderPage() {
             <CardContent className="space-y-4">
               {aiResult && (
                 <div className="flex flex-wrap gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full bg-success/70" />
-                    Keep — strong signal
+                  <span className="inline-flex items-center gap-1.5 font-medium text-success">
+                    <span className="size-2.5 rounded-full bg-success" />
+                    Green = keep
                   </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2.5 rounded-full bg-destructive/70" />
-                    Drop — too generic or noisy
+                  <span className="inline-flex items-center gap-1.5 font-medium text-destructive">
+                    <span className="size-2.5 rounded-full bg-destructive" />
+                    Red = remove (click × or use “Remove red tags”)
                   </span>
                 </div>
               )}
@@ -552,9 +562,9 @@ function LinkedInBuilderPage() {
                         className={cn(
                           "rounded-md border px-2 py-1 text-xs transition-colors",
                           highlight === "drop" &&
-                            "border-destructive/30 bg-destructive/10 text-destructive",
+                            "border-destructive/50 bg-destructive/15 text-destructive ring-1 ring-destructive/20",
                           highlight === "keep" &&
-                            "border-success/30 bg-success/10 text-success",
+                            "border-success/50 bg-success/15 text-success ring-1 ring-success/20",
                           !highlight &&
                             selected &&
                             "border-primary bg-primary/10 text-primary",
@@ -813,6 +823,7 @@ function LinkedInBuilderPage() {
             result={aiResult}
             onResultChange={setAiResult}
             onApply={applyAIRecommendations}
+            onRemoveRedTags={removeRedTags}
           />
 
           {/* Validation */}
