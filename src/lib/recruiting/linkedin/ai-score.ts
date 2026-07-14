@@ -160,6 +160,60 @@ export function buildTermHighlightsForGroup(
   return out;
 }
 
+/** Remove drop/replace actions for terms no longer present in the config. */
+export function pruneAiResultAfterConfigChange(
+  result: LinkedInAIScoreResult,
+  config: LinkedInSearchConfig
+): LinkedInAIScoreResult {
+  const present = new Set<string>();
+  for (const group of TERM_GROUPS) {
+    for (const term of config[group]) {
+      present.add(termKey(term));
+    }
+  }
+
+  const termActions = result.termActions.filter((action) => {
+    if (action.action === "keep") return present.has(termKey(action.term));
+    if (action.action === "remove" || action.action === "replace") {
+      return present.has(termKey(action.term));
+    }
+    return true;
+  });
+
+  return { ...result, termActions };
+}
+
+/** True while any AI-flagged drop term is still on the filter chips. */
+export function hasRemainingDropTerms(
+  result: LinkedInAIScoreResult,
+  config: LinkedInSearchConfig
+): boolean {
+  const dropKeys = getDropTermKeys(result);
+  if (dropKeys.size === 0) return false;
+
+  for (const group of TERM_GROUPS) {
+    for (const term of config[group]) {
+      if (dropKeys.has(termKey(term))) return true;
+    }
+  }
+  return false;
+}
+
+/** Count drop terms still visible on filter chips. */
+export function countRemainingDropTerms(
+  result: LinkedInAIScoreResult,
+  config: LinkedInSearchConfig
+): number {
+  const dropKeys = getDropTermKeys(result);
+  let count = 0;
+  for (const group of TERM_GROUPS) {
+    for (const term of config[group]) {
+      if (dropKeys.has(termKey(term))) count += 1;
+    }
+  }
+  return count;
+}
+
 /** Remove every AI-flagged drop term from the searchable filter groups. */
 export function removeDropTermsFromConfig(
   config: LinkedInSearchConfig,

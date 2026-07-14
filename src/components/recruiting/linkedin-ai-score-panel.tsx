@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   applyAIScoreRecommendations,
-  getDropTermKeys,
+  countRemainingDropTerms,
   POOL_LABELS,
   scoreTone,
   type LinkedInAIScoreResult,
@@ -85,9 +85,7 @@ export function LinkedInAIScorePanel({
   }
 
   const tone = result ? scoreTone(result.score) : null;
-  const removeCount = result
-    ? getDropTermKeys(result).size
-    : 0;
+  const removeCount = result ? countRemainingDropTerms(result, config) : 0;
   const replaceCount = result?.termActions.filter((t) => t.action === "replace").length ?? 0;
   const addCount = result?.suggestedAdditions.reduce((n, a) => n + a.terms.length, 0) ?? 0;
 

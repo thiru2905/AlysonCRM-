@@ -38,6 +38,8 @@ import { LinkedInAIScorePanel } from "@/components/recruiting/linkedin-ai-score-
 import { useLinkedInStore } from "@/lib/recruiting/linkedin-store";
 import {
   buildTermHighlightsForGroup,
+  hasRemainingDropTerms,
+  pruneAiResultAfterConfigChange,
   removeDropTermsFromConfig,
   type LinkedInAIScoreResult,
 } from "@/lib/recruiting/linkedin/ai-score";
@@ -235,31 +237,44 @@ function LinkedInBuilderPage() {
   const { errors, warnings, conflicts, suggestions } = built.validation;
   const hasBlocking = errors.length > 0 || conflicts.length > 0;
 
+  function syncAiHighlights(nextConfig: LinkedInSearchConfig) {
+    setAiResult((prev) => {
+      if (!prev) return null;
+      const pruned = pruneAiResultAfterConfigChange(prev, nextConfig);
+      // Keep green highlights until the user resets or re-runs analysis.
+      return pruned;
+    });
+  }
+
   function patch(next: Partial<LinkedInSearchConfig>) {
-    setConfig((c) => ({ ...c, ...next }));
+    const updated = { ...config, ...next };
+    setConfig(updated);
     setQueryOverride(null);
-    clearAiResult();
+    syncAiHighlights(updated);
   }
   function setLogic(key: keyof LinkedInSearchConfig["logic"], v: MatchLogic) {
-    setConfig((c) => ({ ...c, logic: { ...c.logic, [key]: v } }));
+    const updated = {
+      ...config,
+      logic: { ...config.logic, [key]: v },
+    };
+    setConfig(updated);
     setQueryOverride(null);
-    clearAiResult();
+    syncAiHighlights(updated);
   }
 
   function toggleCollege(college: string) {
-    setConfig((c) => {
-      const exists = c.universities.some(
-        (x) => x.toLowerCase() === college.toLowerCase()
-      );
-      return {
-        ...c,
-        universities: exists
-          ? c.universities.filter((x) => x.toLowerCase() !== college.toLowerCase())
-          : [...c.universities, college],
-      };
-    });
+    const exists = config.universities.some(
+      (x) => x.toLowerCase() === college.toLowerCase()
+    );
+    const updated = {
+      ...config,
+      universities: exists
+        ? config.universities.filter((x) => x.toLowerCase() !== college.toLowerCase())
+        : [...config.universities, college],
+    };
+    setConfig(updated);
     setQueryOverride(null);
-    clearAiResult();
+    syncAiHighlights(updated);
   }
 
   function addAllColleges() {
@@ -298,17 +313,24 @@ function LinkedInBuilderPage() {
     setConfig(nextConfig);
     if (nextMode) setMode(nextMode);
     if (clearQueryOverride) setQueryOverride(null);
-    clearAiResult();
+    syncAiHighlights(nextConfig);
     notify("Applied AI recommendations", "success", "Filters updated from AI analysis.");
   }
 
   function removeRedTags() {
     if (!aiResult) return;
     const next = removeDropTermsFromConfig(config, aiResult);
+    const pruned = pruneAiResultAfterConfigChange(aiResult, next);
     setConfig(next);
     setQueryOverride(null);
-    clearAiResult();
-    notify("Removed AI-flagged filters", "success", "Red tags were deleted. Green tags were kept.");
+    setAiResult(pruned);
+    notify(
+      "Removed red tags",
+      "success",
+      hasRemainingDropTerms(pruned, next)
+        ? "Green tags stay highlighted. Remove remaining red tags when ready."
+        : "Green tags stay highlighted so you can see what to keep."
+    );
   }
 
   // Remove a low-signal term everywhere and, if it has expansions, add them.
