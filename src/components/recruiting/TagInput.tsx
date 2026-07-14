@@ -36,12 +36,15 @@ export function TagInput({
   placeholder,
   suggestions = [],
   id,
+  highlights,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
   suggestions?: string[];
   id?: string;
+  /** When set (after AI analysis), tags render green (keep) or red (drop). */
+  highlights?: Record<string, "keep" | "drop">;
 }) {
   const [draft, setDraft] = React.useState("");
 
@@ -107,7 +110,14 @@ export function TagInput({
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-xs text-secondary-foreground"
+            className={cn(
+              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
+              highlights?.[tag] === "drop" &&
+                "border-destructive/30 bg-destructive/10 text-destructive",
+              highlights?.[tag] === "keep" &&
+                "border-success/30 bg-success/10 text-success",
+              !highlights?.[tag] && "border-transparent bg-secondary text-secondary-foreground"
+            )}
           >
             {tag}
             <button

@@ -37,6 +37,10 @@ import { cn } from "@/lib/utils";
 import { LinkedInAIScorePanel } from "@/components/recruiting/linkedin-ai-score-panel";
 import { useLinkedInStore } from "@/lib/recruiting/linkedin-store";
 import {
+  buildTermHighlightsForGroup,
+  type LinkedInAIScoreResult,
+} from "@/lib/recruiting/linkedin/ai-score";
+import {
   EMPTY_CONFIG,
   type LinkedInSearchConfig,
   type LinkedInTarget,
@@ -172,6 +176,34 @@ function LinkedInBuilderPage() {
   const [queryOverride, setQueryOverride] = React.useState<string | null>(null);
   const [saveName, setSaveName] = React.useState("");
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [aiResult, setAiResult] = React.useState<LinkedInAIScoreResult | null>(null);
+
+  const aiHighlights = React.useMemo(() => {
+    if (!aiResult) return null;
+    return {
+      currentJobTitles: buildTermHighlightsForGroup(
+        aiResult,
+        "currentJobTitles",
+        config.currentJobTitles
+      ),
+      previousJobTitles: buildTermHighlightsForGroup(
+        aiResult,
+        "previousJobTitles",
+        config.previousJobTitles
+      ),
+      skills: buildTermHighlightsForGroup(aiResult, "skills", config.skills),
+      keywords: buildTermHighlightsForGroup(aiResult, "keywords", config.keywords),
+      universities: buildTermHighlightsForGroup(
+        aiResult,
+        "universities",
+        config.universities
+      ),
+    };
+  }, [aiResult, config]);
+
+  function clearAiResult() {
+    setAiResult(null);
+  }
 
   const linkedinSearches = useLinkedInStore((s) => s.linkedinSearches);
   const saveLinkedinSearch = useLinkedInStore((s) => s.saveLinkedinSearch);
@@ -205,10 +237,12 @@ function LinkedInBuilderPage() {
   function patch(next: Partial<LinkedInSearchConfig>) {
     setConfig((c) => ({ ...c, ...next }));
     setQueryOverride(null);
+    clearAiResult();
   }
   function setLogic(key: keyof LinkedInSearchConfig["logic"], v: MatchLogic) {
     setConfig((c) => ({ ...c, logic: { ...c.logic, [key]: v } }));
     setQueryOverride(null);
+    clearAiResult();
   }
 
   function toggleCollege(college: string) {
@@ -224,6 +258,7 @@ function LinkedInBuilderPage() {
       };
     });
     setQueryOverride(null);
+    clearAiResult();
   }
 
   function addAllColleges() {
@@ -236,6 +271,7 @@ function LinkedInBuilderPage() {
     setQueryOverride(null);
     setEditingId(null);
     setSaveName("");
+    clearAiResult();
     notify("Search reset", "info");
   }
 
@@ -261,6 +297,7 @@ function LinkedInBuilderPage() {
     setConfig(nextConfig);
     if (nextMode) setMode(nextMode);
     if (clearQueryOverride) setQueryOverride(null);
+    clearAiResult();
     notify("Applied AI recommendations", "success", "Filters updated from AI analysis.");
   }
 
@@ -393,6 +430,18 @@ function LinkedInBuilderPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {aiResult && (
+                <div className="flex flex-wrap gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-success/70" />
+                    Keep — strong signal
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-destructive/70" />
+                    Drop — too generic or noisy
+                  </span>
+                </div>
+              )}
               <Field
                 id="f-current-title"
                 label="Current job title"
@@ -409,6 +458,7 @@ function LinkedInBuilderPage() {
                   onChange={(v) => patch({ currentJobTitles: v })}
                   suggestions={TITLE_SUGGESTIONS}
                   placeholder="e.g. Software Engineer"
+                  highlights={aiHighlights?.currentJobTitles}
                 />
               </Field>
 
@@ -424,6 +474,7 @@ function LinkedInBuilderPage() {
                   onChange={(v) => patch({ previousJobTitles: v })}
                   suggestions={TITLE_SUGGESTIONS}
                   placeholder="e.g. Full Stack Developer"
+                  highlights={aiHighlights?.previousJobTitles}
                 />
               </Field>
 
@@ -439,6 +490,7 @@ function LinkedInBuilderPage() {
                   onChange={(v) => patch({ skills: v })}
                   suggestions={SKILL_SUGGESTIONS}
                   placeholder="Type any skill, press Enter to add"
+                  highlights={aiHighlights?.skills}
                 />
               </Field>
 
@@ -453,6 +505,7 @@ function LinkedInBuilderPage() {
                   value={config.keywords}
                   onChange={(v) => patch({ keywords: v })}
                   placeholder="Type any keyword, press Enter to add"
+                  highlights={aiHighlights?.keywords}
                 />
               </Field>
             </CardContent>
@@ -483,12 +536,14 @@ function LinkedInBuilderPage() {
                   onChange={(v) => patch({ universities: v })}
                   suggestions={COLLEGE_FILTER_SUGGESTIONS}
                   placeholder="Select or type a college, press Enter"
+                  highlights={aiHighlights?.universities}
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {COLLEGE_FILTER_SUGGESTIONS.map((college) => {
                     const selected = config.universities.some(
                       (x) => x.toLowerCase() === college.toLowerCase()
                     );
+                    const highlight = aiHighlights?.universities[college];
                     return (
                       <button
                         key={college}
@@ -496,9 +551,16 @@ function LinkedInBuilderPage() {
                         onClick={() => toggleCollege(college)}
                         className={cn(
                           "rounded-md border px-2 py-1 text-xs transition-colors",
-                          selected
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                          highlight === "drop" &&
+                            "border-destructive/30 bg-destructive/10 text-destructive",
+                          highlight === "keep" &&
+                            "border-success/30 bg-success/10 text-success",
+                          !highlight &&
+                            selected &&
+                            "border-primary bg-primary/10 text-primary",
+                          !highlight &&
+                            !selected &&
+                            "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
                         )}
                       >
                         {college}
@@ -748,6 +810,8 @@ function LinkedInBuilderPage() {
             query={query}
             includeLowSignal={includeLowSignal}
             hasBlocking={hasBlocking}
+            result={aiResult}
+            onResultChange={setAiResult}
             onApply={applyAIRecommendations}
           />
 

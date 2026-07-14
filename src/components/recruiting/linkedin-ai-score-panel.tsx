@@ -32,6 +32,8 @@ type Props = {
   query: string;
   includeLowSignal: boolean;
   hasBlocking: boolean;
+  result: LinkedInAIScoreResult | null;
+  onResultChange: (result: LinkedInAIScoreResult | null) => void;
   onApply: (next: {
     config: LinkedInSearchConfig;
     mode?: SearchMode;
@@ -45,9 +47,10 @@ export function LinkedInAIScorePanel({
   query,
   includeLowSignal,
   hasBlocking,
+  result,
+  onResultChange,
   onApply,
 }: Props) {
-  const [result, setResult] = React.useState<LinkedInAIScoreResult | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -59,9 +62,9 @@ export function LinkedInAIScorePanel({
       const data = await scoreLinkedInSearchFn({
         data: { config, mode, query, includeLowSignal },
       });
-      setResult(data);
+      onResultChange(data);
     } catch (err) {
-      setResult(null);
+      onResultChange(null);
       setError(err instanceof Error ? err.message : "AI analysis failed");
     } finally {
       setLoading(false);
@@ -184,7 +187,15 @@ export function LinkedInAIScorePanel({
                   {result.termActions
                     .filter((t) => t.action !== "keep")
                     .map((t) => (
-                      <li key={`${t.group}-${t.term}`} className="rounded-md border border-border/60 px-2.5 py-2">
+                      <li
+                        key={`${t.group}-${t.term}`}
+                        className={cn(
+                          "rounded-md border px-2.5 py-2",
+                          (t.action === "remove" || t.action === "replace") &&
+                            "border-destructive/30 bg-destructive/10",
+                          t.action === "keep" && "border-success/30 bg-success/10"
+                        )}
+                      >
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Badge variant="outline" className="text-[10px] uppercase">
                             {t.action}

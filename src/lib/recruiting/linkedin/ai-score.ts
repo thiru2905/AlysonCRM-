@@ -127,3 +127,26 @@ export const POOL_LABELS: Record<PoolEstimate, string> = {
   balanced: "Pool looks balanced",
   too_broad: "Pool may be too noisy",
 };
+
+export type TermHighlight = "keep" | "drop";
+
+/** Map each tag to keep (green) or drop (red) after an AI analysis. */
+export function buildTermHighlightsForGroup(
+  result: LinkedInAIScoreResult,
+  group: TermGroup,
+  terms: string[]
+): Record<string, TermHighlight> {
+  const dropKeys = new Set<string>();
+  for (const action of result.termActions) {
+    if (action.group !== group) continue;
+    if (action.action === "remove" || action.action === "replace") {
+      dropKeys.add(action.term.trim().toLowerCase());
+    }
+  }
+
+  const out: Record<string, TermHighlight> = {};
+  for (const term of terms) {
+    out[term] = dropKeys.has(term.trim().toLowerCase()) ? "drop" : "keep";
+  }
+  return out;
+}
