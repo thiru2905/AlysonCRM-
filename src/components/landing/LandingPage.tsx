@@ -511,11 +511,21 @@ export function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: easeOut }}
           >
-            <MovingBorder duration={5} className="px-3 py-1.5">
-              <span className="inline-flex items-center gap-2">
-                <LiveBeep />
-                <span className="font-[family-name:var(--landing-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-300">
-                  Lab online · Hermes ready
+            <MovingBorder
+              duration={4.5}
+              containerClassName="shadow-[0_0_20px_-6px_rgba(59,130,246,0.55)]"
+              className="bg-zinc-950/90 px-2.5 py-1 backdrop-blur-sm"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <span className="scale-[0.72]">
+                  <LiveBeep />
+                </span>
+                <span className="font-[family-name:var(--landing-mono)] text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-400">
+                  Hermes
+                </span>
+                <span className="h-0.5 w-0.5 rounded-full bg-blue-400/80 shadow-[0_0_6px_1px_rgba(96,165,250,0.7)]" />
+                <span className="font-[family-name:var(--landing-mono)] text-[9px] font-medium tracking-[0.04em] text-zinc-300">
+                  powering Alyson CRM+
                 </span>
               </span>
             </MovingBorder>
