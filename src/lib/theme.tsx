@@ -19,11 +19,11 @@ function getSystem(): "light" | "dark" {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "light";
+    const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "dark";
     setThemeState(stored);
   }, []);
 

@@ -234,6 +234,16 @@ curl http://127.0.0.1:8787/alyson/health
 
 ---
 
+## Marketing landing page
+
+The landing page is the **default** route:
+
+**http://localhost:3000/**
+
+Mission Control lives at **http://localhost:3000/overview**. (`/landing` redirects to `/`.)
+
+Blue/black theme aligned with the in-app accent (`#3B82F6`), with Aceternity-style motion and Syne/Outfit typography.
+
 ## Project structure (short)
 
 ```

@@ -16,7 +16,8 @@ interface ShellContextValue {
 const ShellContext = createContext<ShellContextValue | null>(null);
 
 export function ShellProvider({ children }: { children: ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  /** Pinned open — otherwise Aceternity rail expands on hover */
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAIOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 

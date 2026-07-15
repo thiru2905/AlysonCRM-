@@ -17,7 +17,7 @@ export function AlysonLogo({
     <span className={cn("inline-flex items-center gap-2.5 min-w-0", className)}>
       <img
         src={LOGO_SRC}
-        alt="Alyson"
+        alt="Alyson CRM+"
         width={size}
         height={size}
         className="shrink-0 rounded-full"
@@ -30,7 +30,7 @@ export function AlysonLogo({
             wordmarkClassName,
           )}
         >
-          Agentic CRM+
+          Alyson CRM+
         </span>
       ) : null}
     </span>

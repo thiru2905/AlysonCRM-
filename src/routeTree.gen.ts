@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WorkersRouteImport } from './routes/workers'
 import { Route as WorkRouteImport } from './routes/work'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as RelationshipsRouteImport } from './routes/relationships'
@@ -18,10 +19,13 @@ import { Route as RecruitingRouteImport } from './routes/recruiting'
 import { Route as RealEstateRouteImport } from './routes/real-estate'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ProfilesRouteImport } from './routes/profiles'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PredictionsRouteImport } from './routes/predictions'
+import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as OutreachRouteImport } from './routes/outreach'
 import { Route as MortgageRouteImport } from './routes/mortgage'
 import { Route as MarketingRouteImport } from './routes/marketing'
+import { Route as LandingRouteImport } from './routes/landing'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as InsuranceRouteImport } from './routes/insurance'
 import { Route as HermesRouteImport } from './routes/hermes'
@@ -61,6 +65,11 @@ const WorkRoute = WorkRouteImport.update({
   path: '/work',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -96,9 +105,19 @@ const ProfilesRoute = ProfilesRouteImport.update({
   path: '/profiles',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PredictionsRoute = PredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OverviewRoute = OverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OutreachRoute = OutreachRouteImport.update({
@@ -114,6 +133,11 @@ const MortgageRoute = MortgageRouteImport.update({
 const MarketingRoute = MarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KnowledgeRoute = KnowledgeRouteImport.update({
@@ -270,10 +294,13 @@ export interface FileRoutesByFullPath {
   '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
+  '/landing': typeof LandingRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
   '/outreach': typeof OutreachRoute
+  '/overview': typeof OverviewRoute
   '/predictions': typeof PredictionsRoute
+  '/privacy': typeof PrivacyRoute
   '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
@@ -281,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/relationships': typeof RelationshipsRoute
   '/success': typeof SuccessRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
   '/workers': typeof WorkersRoute
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
@@ -312,10 +340,13 @@ export interface FileRoutesByTo {
   '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
+  '/landing': typeof LandingRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
   '/outreach': typeof OutreachRoute
+  '/overview': typeof OverviewRoute
   '/predictions': typeof PredictionsRoute
+  '/privacy': typeof PrivacyRoute
   '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
@@ -323,6 +354,7 @@ export interface FileRoutesByTo {
   '/relationships': typeof RelationshipsRoute
   '/success': typeof SuccessRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
   '/workers': typeof WorkersRoute
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
@@ -355,10 +387,13 @@ export interface FileRoutesById {
   '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
+  '/landing': typeof LandingRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
   '/outreach': typeof OutreachRoute
+  '/overview': typeof OverviewRoute
   '/predictions': typeof PredictionsRoute
+  '/privacy': typeof PrivacyRoute
   '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
@@ -366,6 +401,7 @@ export interface FileRoutesById {
   '/relationships': typeof RelationshipsRoute
   '/success': typeof SuccessRoute
   '/tasks': typeof TasksRoute
+  '/terms': typeof TermsRoute
   '/work': typeof WorkRoute
   '/workers': typeof WorkersRoute
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
@@ -400,10 +436,13 @@ export interface FileRouteTypes {
     | '/hermes'
     | '/insurance'
     | '/knowledge'
+    | '/landing'
     | '/marketing'
     | '/mortgage'
     | '/outreach'
+    | '/overview'
     | '/predictions'
+    | '/privacy'
     | '/profiles'
     | '/projects'
     | '/real-estate'
@@ -411,6 +450,7 @@ export interface FileRouteTypes {
     | '/relationships'
     | '/success'
     | '/tasks'
+    | '/terms'
     | '/work'
     | '/workers'
     | '/entities/$kind'
@@ -442,10 +482,13 @@ export interface FileRouteTypes {
     | '/hermes'
     | '/insurance'
     | '/knowledge'
+    | '/landing'
     | '/marketing'
     | '/mortgage'
     | '/outreach'
+    | '/overview'
     | '/predictions'
+    | '/privacy'
     | '/profiles'
     | '/projects'
     | '/real-estate'
@@ -453,6 +496,7 @@ export interface FileRouteTypes {
     | '/relationships'
     | '/success'
     | '/tasks'
+    | '/terms'
     | '/work'
     | '/workers'
     | '/entities/$kind'
@@ -484,10 +528,13 @@ export interface FileRouteTypes {
     | '/hermes'
     | '/insurance'
     | '/knowledge'
+    | '/landing'
     | '/marketing'
     | '/mortgage'
     | '/outreach'
+    | '/overview'
     | '/predictions'
+    | '/privacy'
     | '/profiles'
     | '/projects'
     | '/real-estate'
@@ -495,6 +542,7 @@ export interface FileRouteTypes {
     | '/relationships'
     | '/success'
     | '/tasks'
+    | '/terms'
     | '/work'
     | '/workers'
     | '/entities/$kind'
@@ -528,10 +576,13 @@ export interface RootRouteChildren {
   HermesRoute: typeof HermesRoute
   InsuranceRoute: typeof InsuranceRoute
   KnowledgeRoute: typeof KnowledgeRoute
+  LandingRoute: typeof LandingRoute
   MarketingRoute: typeof MarketingRoute
   MortgageRoute: typeof MortgageRoute
   OutreachRoute: typeof OutreachRoute
+  OverviewRoute: typeof OverviewRoute
   PredictionsRoute: typeof PredictionsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfilesRoute: typeof ProfilesRouteWithChildren
   ProjectsRoute: typeof ProjectsRoute
   RealEstateRoute: typeof RealEstateRoute
@@ -539,6 +590,7 @@ export interface RootRouteChildren {
   RelationshipsRoute: typeof RelationshipsRoute
   SuccessRoute: typeof SuccessRoute
   TasksRoute: typeof TasksRoute
+  TermsRoute: typeof TermsRoute
   WorkRoute: typeof WorkRoute
   WorkersRoute: typeof WorkersRoute
   RecruitingCompareRoute: typeof RecruitingCompareRoute
@@ -566,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/work'
       fullPath: '/work'
       preLoaderRoute: typeof WorkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tasks': {
@@ -617,11 +676,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/predictions': {
       id: '/predictions'
       path: '/predictions'
       fullPath: '/predictions'
       preLoaderRoute: typeof PredictionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/overview': {
+      id: '/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof OverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/outreach': {
@@ -643,6 +716,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/marketing'
       preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/knowledge': {
@@ -920,10 +1000,13 @@ const rootRouteChildren: RootRouteChildren = {
   HermesRoute: HermesRoute,
   InsuranceRoute: InsuranceRoute,
   KnowledgeRoute: KnowledgeRoute,
+  LandingRoute: LandingRoute,
   MarketingRoute: MarketingRoute,
   MortgageRoute: MortgageRoute,
   OutreachRoute: OutreachRoute,
+  OverviewRoute: OverviewRoute,
   PredictionsRoute: PredictionsRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfilesRoute: ProfilesRouteWithChildren,
   ProjectsRoute: ProjectsRoute,
   RealEstateRoute: RealEstateRoute,
@@ -931,6 +1014,7 @@ const rootRouteChildren: RootRouteChildren = {
   RelationshipsRoute: RelationshipsRoute,
   SuccessRoute: SuccessRoute,
   TasksRoute: TasksRoute,
+  TermsRoute: TermsRoute,
   WorkRoute: WorkRoute,
   WorkersRoute: WorkersRoute,
   RecruitingCompareRoute: RecruitingCompareRoute,

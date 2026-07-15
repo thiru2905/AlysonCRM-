@@ -1,8 +1,10 @@
 import { useShell } from "@/lib/shell";
 import { cn } from "@/lib/utils";
 import { notifyDone } from "@/lib/actions";
+import { springGentle, transitionMedium } from "@/lib/motion";
 import { ArrowUp, Bot, Sparkles, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
 const SUGGESTIONS = [
   "Summarize what changed since I was last here",
@@ -25,23 +27,31 @@ export function AIPanel() {
 
   return (
     <>
-      {/* backdrop on mobile */}
-      <div
-        onClick={() => setAIOpen(false)}
-        className={cn(
-          "md:hidden fixed inset-0 z-40 bg-background/60 backdrop-blur-sm transition",
-          aiOpen ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
-      />
-      <aside
+      <AnimatePresence>
+        {aiOpen ? (
+          <motion.div
+            key="ai-backdrop"
+            onClick={() => setAIOpen(false)}
+            className="md:hidden fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={transitionMedium}
+          />
+        ) : null}
+      </AnimatePresence>
+
+      <motion.aside
         data-open={aiOpen}
+        initial={false}
+        animate={{
+          width: aiOpen ? 360 : 0,
+          opacity: aiOpen ? 1 : 0.98,
+        }}
+        transition={springGentle}
         className={cn(
-          "fixed md:relative right-0 top-0 h-full md:h-auto z-50",
-          "flex flex-col shrink-0 border-l border-border bg-surface",
-          "transition-[width,transform] duration-200 ease-out overflow-hidden",
-          aiOpen
-            ? "w-[360px] translate-x-0"
-            : "w-0 translate-x-full md:translate-x-0",
+          "fixed md:relative right-0 top-0 z-50 h-full md:h-auto md:self-stretch",
+          "flex shrink-0 flex-col overflow-hidden border-l border-border bg-surface",
         )}
       >
         <div className="w-[360px] flex flex-col h-full">
@@ -49,61 +59,49 @@ export function AIPanel() {
             <div className="h-6 w-6 rounded-md ai-gradient-bg" />
             <div className="flex flex-col leading-none">
               <span className="text-sm font-medium">Alyson</span>
-              <span className="text-[10px] text-muted-foreground text-mono uppercase tracking-wider">
-                Ambient
-              </span>
+              <span className="text-mono text-[10px] text-muted-foreground">AI · ready</span>
             </div>
-            <div className="flex-1" />
             <button
-              type="button"
               onClick={() => setAIOpen(false)}
-              className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+              className="ml-auto h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition"
               aria-label="Close AI panel"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-6">
-            <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground text-mono">
-                <Sparkles className="h-3 w-3 text-ai" />
-                Context
+          <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+            <div className="rounded-xl border border-border/70 bg-background p-4">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-ai" />
+                What should Alyson do next?
               </div>
-              <p className="text-sm leading-relaxed">
-                You're on <span className="font-medium">Overview</span>. I can see 3 workers,
-                12 tasks in flight, and 2 approvals waiting.
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                Ask about pipelines, approvals, outreach, or workers. Alyson proposes — you approve.
               </p>
             </div>
 
-            <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground text-mono px-1 pb-2">
-                Try
-              </div>
-              <ul className="space-y-1">
-                {SUGGESTIONS.map((s) => (
-                  <li key={s}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setValue(s);
-                        inputRef.current?.focus();
-                      }}
-                      className="w-full text-left text-sm px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition flex items-start gap-2"
-                    >
-                      <Bot className="h-3.5 w-3.5 mt-0.5 shrink-0 text-ai" />
-                      <span>{s}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setValue(s);
+                    inputRef.current?.focus();
+                  }}
+                  className="w-full text-left text-xs rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 text-muted-foreground hover:text-foreground hover:border-border transition duration-300"
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="p-3 border-t border-border/70">
-            <div className="relative rounded-lg border border-border bg-card focus-within:ai-ring transition">
+          <div className="shrink-0 border-t border-border/70 p-3">
+            <div className="relative">
               <textarea
                 ref={inputRef}
+                rows={3}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -112,27 +110,24 @@ export function AIPanel() {
                     send();
                   }
                 }}
-                rows={2}
-                placeholder="Ask, plan, or delegate…"
-                className="w-full resize-none bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground/70"
+                placeholder="Ask Alyson…"
+                className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-ring/40 transition"
               />
-              <div className="flex items-center justify-between px-2 pb-2">
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground text-mono">
-                  <kbd>↵</kbd> send
-                </div>
-                <button
-                  type="button"
-                  onClick={send}
-                  disabled={!value.trim()}
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md ai-gradient-bg text-ai-foreground shadow-pop hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <button
+                onClick={send}
+                className="absolute right-2 bottom-2 h-7 w-7 inline-flex items-center justify-center rounded-md bg-ai text-ai-foreground hover:brightness-110 transition"
+                aria-label="Send"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
             </div>
+            <p className="mt-2 text-mono text-[10px] text-muted-foreground flex items-center gap-1.5">
+              <Bot className="h-3 w-3" />
+              Enter to send · Shift+Enter for newline
+            </p>
           </div>
         </div>
-      </aside>
+      </motion.aside>
     </>
   );
 }

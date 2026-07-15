@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Bot, Search } from "lucide-react";
 
 const MOBILE = NAV.filter((n) =>
-  ["/", "/work", "/workers", "/knowledge"].includes(n.to),
+  ["/overview", "/work", "/workers", "/knowledge"].includes(n.to),
 );
 
 export function MobileNav() {

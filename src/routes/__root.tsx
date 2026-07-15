@@ -3,6 +3,7 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -14,6 +15,7 @@ import { ShellProvider } from "@/lib/shell";
 import { AppShell } from "@/components/shell/AppShell";
 import { RuntimeIntroModal } from "@/components/runtime/RuntimeIntroModal";
 import { Toaster } from "@/components/ui/sonner";
+import { AppMotionProvider } from "@/components/motion/AppMotionProvider";
 
 function NotFoundComponent() {
   return (
@@ -27,7 +29,7 @@ function NotFoundComponent() {
           The route you asked for doesn't exist in this workspace.
         </p>
         <a
-          href="/"
+          href="/overview"
           className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:brightness-110"
         >
           Return to overview
@@ -40,6 +42,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const detail = import.meta.env.DEV ? error?.message : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -51,6 +54,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Alyson caught the error. You can retry or return home.
         </p>
+        {detail ? (
+          <p className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-left text-[11px] text-destructive">
+            {detail}
+          </p>
+        ) : null}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -101,7 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -127,17 +135,25 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isLanding =
+    pathname === "/" ||
+    pathname === "/landing" ||
+    pathname === "/terms" ||
+    pathname === "/privacy";
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <ShellProvider>
-          <AppShell>
-            <Outlet />
-          </AppShell>
-          <RuntimeIntroModal />
-          <Toaster position="bottom-right" />
-        </ShellProvider>
+        <AppMotionProvider>
+          <ShellProvider>
+            <AppShell>
+              <Outlet />
+            </AppShell>
+            {!isLanding ? <RuntimeIntroModal /> : null}
+            <Toaster position="bottom-right" />
+          </ShellProvider>
+        </AppMotionProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

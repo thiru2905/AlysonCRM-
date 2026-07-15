@@ -258,3 +258,83 @@
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
 }
+
+/* Product-wide soft CSS transitions */
+@layer base {
+  a,
+  button,
+  [role="button"],
+  input,
+  textarea,
+  select {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform, filter;
+    transition-duration: 350ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    a,
+    button,
+    [role="button"],
+    input,
+    textarea,
+    select {
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Landing page — Space Grotesk display + DM Sans body */
+/* Landing is always dark — independent of the app theme toggle */
+.landing-root {
+  --landing-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --landing-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --landing-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  --landing-bg: #000000;
+  --landing-fg: #f4f4f5;
+  --landing-muted: #71717a;
+  --landing-heading: #ffffff;
+  --landing-card: #050505;
+  --landing-elevated: #0a0a0a;
+  --landing-border: rgba(255, 255, 255, 0.08);
+  --landing-nav-fg: #a1a1aa;
+  --landing-nav-fg-hover: #ffffff;
+  --landing-pill-bg: rgba(0, 0, 0, 0.72);
+  --landing-pill-border: rgba(255, 255, 255, 0.1);
+
+  color-scheme: dark;
+  background-color: var(--landing-bg);
+  color: var(--landing-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
+}
+
+.landing-root h1,
+.landing-root h2,
+.landing-root h3 {
+  font-family: var(--landing-display);
+  letter-spacing: -0.035em;
+  font-feature-settings: "ss01" on, "ss02" on;
+  color: var(--landing-heading);
+}
+
+@keyframes landing-spotlight {
+  0% {
+    opacity: 0;
+    transform: translateX(-20%) translateY(10%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+.animate-landing-spotlight {
+  animation: landing-spotlight 1.6s ease forwards;
+}

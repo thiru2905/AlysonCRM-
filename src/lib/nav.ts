@@ -37,7 +37,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   {
     label: "Overview",
-    to: "/",
+    to: "/overview",
     icon: LayoutDashboard,
     shortcut: "G H",
     description: "Approvals, active workers, signal at a glance.",
