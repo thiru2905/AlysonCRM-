@@ -7,6 +7,7 @@ import {
   GitBranch,
   GitCompare,
   Activity,
+  Network,
   Linkedin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ const ITEMS = [
   { to: "/recruiting/compare", label: "Compare", icon: GitCompare },
   { to: "/recruiting/usage", label: "Usage", icon: Activity },
   { to: "/recruiting/linkedin", label: "Search builder", icon: Linkedin },
+  { to: "/recruiting/linkedin/branches", label: "Branch map", icon: Network },
 ] as const;
 
 export function RecruitingSubnav() {

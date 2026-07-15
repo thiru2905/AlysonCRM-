@@ -9,6 +9,7 @@ import { RuntimeOverview } from "@/components/runtime/RuntimeOverview";
 import { RuntimeExtensionPanel } from "@/components/runtime/RuntimeExtensionPanel";
 import { RuntimeMcpPanel } from "@/components/runtime/RuntimeMcpPanel";
 import { RuntimeLogsPanel } from "@/components/runtime/RuntimeLogsPanel";
+import { LiveBrowserWorkersPanel } from "@/components/browser-workers/LiveBrowserWorkersPanel";
 import {
   ACTIONS,
   CAPABILITIES,
@@ -148,7 +149,7 @@ function BrowserWorkersView() {
 
       {tab === "logs" && (
         <div className="mt-5">
-          <RuntimeLogsPanel />
+          <LiveBrowserWorkersPanel />
         </div>
       )}
 

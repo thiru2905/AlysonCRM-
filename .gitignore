@@ -18,6 +18,8 @@ dist-ssr
 *.local
 .env
 .env.local
+data/*.db
+data/*.db-*
 
 # Lovable (removed — do not commit)
 .lovable/

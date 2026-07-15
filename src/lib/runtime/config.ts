@@ -31,25 +31,32 @@ export interface RuntimeDownload {
   url: string;
 }
 
-/** Download URLs are placeholders until the installer ships. */
+/** Generated installers with absolute paths — download while CRM is running. */
 export const RUNTIME_DOWNLOADS: RuntimeDownload[] = [
   {
     os: "windows",
     label: "Windows 10 / 11",
-    filename: "AlysonRuntime-Setup.exe",
-    sizeMb: 84.2,
-    url: "https://downloads.alyson.dev/runtime/latest/AlysonRuntime-Setup.exe",
+    filename: "Start-AlysonDesktopAgent.bat",
+    sizeMb: 0.1,
+    url: "/api/agent/installer/windows.bat",
+  },
+  {
+    os: "windows",
+    label: "Windows 10 / 11 (PowerShell)",
+    filename: "Start-AlysonDesktopAgent.ps1",
+    sizeMb: 0.1,
+    url: "/api/agent/installer/windows.ps1",
   },
   {
     os: "macos",
-    label: "macOS 13+ (Apple Silicon & Intel)",
-    filename: "AlysonRuntime.dmg",
-    sizeMb: 92.6,
-    url: "https://downloads.alyson.dev/runtime/latest/AlysonRuntime.dmg",
+    label: "macOS 13+ (dev script)",
+    filename: "start-desktop-agent.sh",
+    sizeMb: 0.1,
+    url: "/downloads/start-desktop-agent.sh",
   },
 ];
 
-export const RUNTIME_VERSION = "0.4.2";
+export const RUNTIME_VERSION = "0.1.0";
 
 export interface Capability {
   icon: LucideIcon;

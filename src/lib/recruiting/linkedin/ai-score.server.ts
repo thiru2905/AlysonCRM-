@@ -4,6 +4,7 @@
 
 import { z } from "zod";
 import { extractJsonObject, computeScoreMaxTokens } from "./deepseek-json";
+import { getDeepSeekApiKey } from "./deepseek-env.server";
 import { analyzeQuality } from "./optimizer";
 import { buildBooleanQuery } from "./query-builder";
 import { ACHIEVEMENT_SUGGESTIONS } from "./achievements";
@@ -605,10 +606,10 @@ async function callDeepSeekScore(
 export async function scoreLinkedInSearch(
   req: LinkedInAIScoreRequest
 ): Promise<LinkedInAIScoreResult> {
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
+  const apiKey = getDeepSeekApiKey();
   if (!apiKey) {
     throw new Error(
-      "DEEPSEEK_API_KEY is not configured. Add it to your .env file to use AI scoring."
+      "DEEPSEEK_API_KEY is not configured. Add it to alysonCRM+/.env and restart the dev server."
     );
   }
 

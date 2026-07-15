@@ -50,3 +50,35 @@ API keys stay server-side.
 - `/recruiting/jobs` — post roles, source candidates
 - `/recruiting/search` — candidate search (PDL/Coresignal)
 - `/recruiting/linkedin` — LinkedIn / Sales Navigator Boolean builder
+
+## Desktop Agent + Automation Platform
+
+Alyson CRM+ includes a local AI employee stack:
+
+```
+Alyson CRM (:3000) → Desktop Agent (:8787) → Browser MCP Agent (:8820) → Chrome
+```
+
+| Route | Purpose |
+| --- | --- |
+| `/browser-workers` | Desktop fleet, MCP tools, activity |
+| `/automation` | Natural-language tasks, runs, approvals |
+| `/outreach` | LinkedIn campaigns, prospects, sequences |
+
+### Run the full stack (development)
+
+```bash
+npm run agent:stack
+# or separately:
+npm run dev
+npm run browser-agent:dev
+npm run desktop:dev
+```
+
+### Pair a device
+
+1. Open CRM — onboarding popup appears if no device is connected
+2. Click **Connect Device** to get an 8-character code (expires in 5 min)
+3. Pair from desktop: `POST http://127.0.0.1:8787/alyson/pair` with `{ "code": "..." }`
+
+See [`desktop/README.md`](./desktop/README.md) for installer build (`desktop:package`).

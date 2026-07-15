@@ -20,6 +20,7 @@ import {
   buildTitleQuery,
   buildKeywordQuery,
   buildSchoolQuery,
+  buildBranchKeywordQuery,
 } from "./optimizer";
 import type {
   BuiltSearch,
@@ -167,6 +168,78 @@ export function buildUrlFromQuery(
 interface BuildOptions {
   mode?: SearchMode;
   includeLowSignal?: boolean;
+  /** Skip auto-sanitization (branch builder already simplifies). */
+  skipSanitize?: boolean;
+  /** Branch map: title-OR keywords only, no stacked school/year AND facets. */
+  branchLink?: boolean;
+  /** Base config for manual-filter hints when branchLink strips facets from URL. */
+  manualConfig?: LinkedInSearchConfig;
+}
+
+/** LinkedIn often returns 0 results when title + skills + achievements are all AND'd. */
+function sanitizeForLinkedIn(
+  config: LinkedInSearchConfig,
+  mode: SearchMode,
+  includeLowSignal: boolean
+): {
+  config: LinkedInSearchConfig;
+  mode: SearchMode;
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  let cfg = config;
+  let m = mode;
+
+  const query = () => buildModeQuery(cfg, m, includeLowSignal);
+  let q = query();
+  const andCount = () => (query().match(/\bAND\b/g) ?? []).length;
+
+  if ((cfg.achievements?.length ?? 0) > 0 && (andCount() > 3 || q.length > 900)) {
+    cfg = { ...cfg, achievements: [] };
+    if (m === "precision") m = "balanced";
+    warnings.push(
+      "Achievements were removed from the keyword query — requiring them with AND logic usually returns zero LinkedIn results. Review profiles manually or use Search Branches."
+    );
+    q = query();
+  }
+
+  if (cfg.currentJobTitles.length > 2 && andCount() > 3) {
+    cfg = {
+      ...cfg,
+      currentJobTitles: cfg.currentJobTitles.slice(0, 1),
+      logic: { ...cfg.logic, jobTitles: "any" },
+    };
+    warnings.push(
+      "Multiple job titles were collapsed to the primary title so LinkedIn returns results."
+    );
+  }
+
+  if (cfg.skills.length > 6 && andCount() > 3) {
+    cfg = { ...cfg, skills: cfg.skills.slice(0, 4), logic: { ...cfg.logic, skills: "any" } };
+    warnings.push("Skills were capped to 4 with OR logic to avoid over-constraining results.");
+  }
+
+  // School in keywords AND school facet = double AND → zero results on People Search.
+  if (hasEncodedSchoolFilter(cfg) && cfg.universities.length) {
+    cfg = { ...cfg, universities: [] };
+    warnings.push(
+      "Colleges use LinkedIn's School filter in the URL only — not duplicated in the keyword box (AND'ing both usually returns zero)."
+    );
+    q = query();
+  }
+
+  // Multiple AND groups → broad OR in URL (LinkedIn Boolean: AND limits, OR widens).
+  if (m !== "broad") {
+    const ands = (query().match(/\bAND\b/g) ?? []).length;
+    if (ands >= 2) {
+      m = "broad";
+      warnings.push(
+        "Switched to broad OR search in the URL — chaining title AND skills AND colleges with AND often returns zero on LinkedIn."
+      );
+    }
+  }
+
+  return { config: cfg, mode: m, warnings };
 }
 
 /**
@@ -178,19 +251,29 @@ export function buildSearch(
   target: LinkedInTarget,
   options: BuildOptions = {}
 ): BuiltSearch {
-  const mode: SearchMode = options.mode ?? "precision";
   const includeLowSignal = options.includeLowSignal ?? false;
+  const sanitized = options.skipSanitize
+    ? { config, mode: options.mode ?? "precision", warnings: [] as string[] }
+    : sanitizeForLinkedIn(config, options.mode ?? "precision", includeLowSignal);
 
-  const query = buildModeQuery(config, mode, includeLowSignal);
+  const effectiveConfig = sanitized.config;
+  const mode: SearchMode = sanitized.mode;
+  const branchLink = options.branchLink ?? false;
+  const manualSource = options.manualConfig ?? effectiveConfig;
+
+  const query = branchLink
+    ? buildBranchKeywordQuery(effectiveConfig)
+    : buildModeQuery(effectiveConfig, mode, includeLowSignal);
+
+  const urlOpts = { mode, includeLowSignal, branchLink };
   const url =
     target === "sales"
-      ? buildSalesNavigatorUrl(config, mode, includeLowSignal)
-      : buildSearchUrl(target, query, config, { mode, includeLowSignal });
-  const validation = validateConfig(config);
+      ? buildSalesNavigatorUrl(effectiveConfig, mode, includeLowSignal, { branchLink })
+      : buildSearchUrl(target, query, effectiveConfig, urlOpts);
+  const validation = validateConfig(effectiveConfig);
 
-  // Merge in relevance/quality checks.
-  const quality = analyzeQuality(config, mode, includeLowSignal);
-  validation.warnings.push(...quality.warnings);
+  const quality = analyzeQuality(effectiveConfig, mode, includeLowSignal);
+  validation.warnings.push(...quality.warnings, ...sanitized.warnings);
   validation.suggestions.push(...quality.suggestions);
 
   if (url.length > MAX_URL_LENGTH) {
@@ -203,12 +286,17 @@ export function buildSearch(
     query,
     url,
     target,
-    includedFilters: includedFilters(config, target),
-    manualFilters: manualFilters(config, target),
+    includedFilters: includedFilters(effectiveConfig, target),
+    manualFilters: [
+      ...manualFilters(branchLink ? manualSource : effectiveConfig, target),
+      ...(config.achievements?.length && !effectiveConfig.achievements?.length
+        ? [{ label: "Achievements (scan profiles manually)", value: config.achievements.join(", ") }]
+        : []),
+    ],
     validation,
-    titleQuery: buildTitleQuery(config, includeLowSignal),
-    keywordQuery: buildKeywordQuery(config, mode, includeLowSignal),
-    schoolQuery: buildSchoolQuery(config, includeLowSignal),
+    titleQuery: buildTitleQuery(effectiveConfig, includeLowSignal),
+    keywordQuery: buildKeywordQuery(effectiveConfig, mode, includeLowSignal),
+    schoolQuery: buildSchoolQuery(effectiveConfig, includeLowSignal),
   };
 }
 

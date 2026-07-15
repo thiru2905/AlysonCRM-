@@ -143,6 +143,20 @@ function collectTerms(
   };
 }
 
+/** Branch / one-click map links: title OR only — never AND chains that zero out results. */
+export function buildBranchKeywordQuery(config: LinkedInSearchConfig): string {
+  const logic = resolveLogic(config);
+  const titles = dedupe(config.currentJobTitles);
+  const positive = formatGroup(titles, logic.jobTitles);
+  const excluded = dedupe([
+    ...config.excludedKeywords,
+    ...config.excludedJobTitles,
+  ]);
+  const not = excluded.length ? ` NOT ${formatGroup(excluded, "any")}` : "";
+  if (positive && not) return `${positive}${not}`;
+  return positive || not.trim();
+}
+
 /** Build the Boolean keyword query for a given search mode. */
 export function buildModeQuery(
   config: LinkedInSearchConfig,
@@ -362,6 +376,30 @@ export function analyzeQuality(
         'Add specific role titles or named technologies (e.g. "Machine Learning Engineer", "PyTorch") to improve relevance.'
       );
     }
+  }
+
+  const achievements = config.achievements ?? [];
+  if (
+    mode === "precision" &&
+    achievements.length > 0 &&
+    (skills.length > 0 || keywords.length > 0)
+  ) {
+    warnings.push(
+      "Requiring job title AND skills AND achievements in one query often returns zero results on LinkedIn. Use Search Branches for role titles, or move achievements to manual profile review."
+    );
+  }
+
+  if (achievements.length >= 4 && mode !== "broad") {
+    warnings.push(
+      "Many achievement filters combined with AND logic usually over-constrains LinkedIn. Generate Search Branches or drop achievements from the keyword box."
+    );
+  }
+
+  const andCount = (query.match(/\bAND\b/g) ?? []).length;
+  if (andCount > 4) {
+    warnings.push(
+      "This query has too many required AND groups — LinkedIn likely returns no results. Try Balanced mode or Search Branches."
+    );
   }
 
   if (titles.length > 1) {

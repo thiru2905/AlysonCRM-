@@ -1,0 +1,11 @@
+{
+  "recordType": "professional_profile",
+  "fields": [
+    { "name": "full_name", "type": "string", "required": true },
+    { "name": "headline", "type": "string" },
+    { "name": "company", "type": "string" },
+    { "name": "location", "type": "string" },
+    { "name": "profile_url", "type": "url" }
+  ],
+  "authorizedBusinessPurpose": "Local MVP smoke test against a harmless sample page"
+}

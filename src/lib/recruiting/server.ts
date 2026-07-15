@@ -13,6 +13,7 @@ import type {
   LinkedInAIScoreResult,
 } from "./linkedin/ai-score";
 import type { ParseCollegesResult } from "./linkedin/parse-colleges";
+import type { GenerateBranchesRequest, SearchBranchPlan } from "./linkedin/branch-types";
 
 // ---------------------------------------------------------------------------
 // TanStack Start server functions. These run only on the server; provider
@@ -164,6 +165,7 @@ export const usageFn = createServerFn({ method: "GET" })
 export const statusFn = createServerFn({ method: "GET" }).handler(
   async (): Promise<StatusResponse> => {
     const { getActiveProviderId, AVAILABLE_PROVIDERS } = await import("./providers");
+    const { isDeepSeekConfigured } = await import("./linkedin/deepseek-env.server");
     return {
       activeProvider: getActiveProviderId(),
       providers: AVAILABLE_PROVIDERS.map((p) => ({
@@ -175,7 +177,7 @@ export const statusFn = createServerFn({ method: "GET" }).handler(
         CANDIDATE_PROVIDER: process.env.CANDIDATE_PROVIDER ?? "mock",
         CORESIGNAL_API_KEY: Boolean(process.env.CORESIGNAL_API_KEY),
         PDL_API_KEY: Boolean(process.env.PDL_API_KEY),
-        DEEPSEEK_API_KEY: Boolean(process.env.DEEPSEEK_API_KEY),
+        DEEPSEEK_API_KEY: isDeepSeekConfigured(),
       },
     };
   }
@@ -193,4 +195,11 @@ export const parseCollegesFn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<ParseCollegesResult> => {
     const { parseCollegesWithAI } = await import("./linkedin/parse-colleges.server");
     return parseCollegesWithAI(data.text);
+  });
+
+export const generateSearchBranchesFn = createServerFn({ method: "POST" })
+  .validator((payload: GenerateBranchesRequest) => payload)
+  .handler(async ({ data }): Promise<SearchBranchPlan> => {
+    const { generateSearchBranches } = await import("./linkedin/branch-generator.server");
+    return generateSearchBranches(data);
   });

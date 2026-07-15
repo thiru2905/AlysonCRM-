@@ -1,4 +1,5 @@
 import {
+  Contact,
   Boxes,
   FolderKanban,
   Bot,
@@ -18,6 +19,7 @@ import {
   Link2,
   Layers,
   Wand2,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -50,6 +52,14 @@ export const NAV: NavItem[] = [
     section: "primitives",
   },
   {
+    label: "Profiles",
+    to: "/profiles",
+    icon: Contact,
+    shortcut: "G L",
+    description: "Saved LinkedIn profiles — review drafts and track outreach status.",
+    section: "primitives",
+  },
+  {
     label: "Work",
     to: "/work",
     icon: FolderKanban,
@@ -73,6 +83,32 @@ export const NAV: NavItem[] = [
     shortcut: "G B",
     description: "Desktop browser fleet. Sessions, queue, screenshots.",
     section: "primitives",
+  },
+  {
+    label: "Automation",
+    to: "/automation",
+    icon: Bot,
+    shortcut: "G T",
+    description: "Natural-language tasks, plans, approvals, and run monitoring.",
+    section: "primitives",
+    accent: "ai",
+  },
+  {
+    label: "Hermes Engine",
+    to: "/hermes",
+    icon: Rocket,
+    shortcut: "G Z",
+    description: "Structured LinkedIn missions — Chrome, search, connections, and messages.",
+    section: "primitives",
+    accent: "ai",
+  },
+  {
+    label: "LinkedIn Outreach",
+    to: "/outreach",
+    icon: Link2,
+    shortcut: "G O",
+    description: "Campaigns, prospects, sequences, and conversation tracking.",
+    section: "flavors",
   },
   {
     label: "Experiments",

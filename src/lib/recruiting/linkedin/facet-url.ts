@@ -161,8 +161,13 @@ function partitionSchoolsForSalesNav(schools: string[]): {
 export function buildSalesNavigatorUrl(
   config: LinkedInSearchConfig,
   mode: SearchMode = "precision",
-  includeLowSignal = false
+  includeLowSignal = false,
+  options: Pick<SearchUrlOptions, "branchLink"> = {}
 ): string {
+  if (options.branchLink) {
+    return buildBranchSalesNavigatorUrl(config);
+  }
+
   const bucketIds = getExperienceBucketIds(config);
   const { facetSchools, keywordSchools } = partitionSchoolsForSalesNav(
     getSchoolNames(config)
@@ -245,13 +250,49 @@ export function getSalesNavManualSchools(config: LinkedInSearchConfig): string[]
   return partitionSchoolsForSalesNav(getSchoolNames(config)).keywordSchools;
 }
 
+export interface SearchUrlOptions {
+  mode?: SearchMode;
+  includeLowSignal?: boolean;
+  /** Branch map links: keywords-only People Search, title-only Sales Nav — no stacked AND facets. */
+  branchLink?: boolean;
+}
+
+/** People Search URL with keywords only (LinkedIn docs: keywords param holds Boolean OR/NOT). */
+export function buildBranchPeopleSearchUrl(query: string): string {
+  const params = new URLSearchParams();
+  params.set("origin", "FACETED_SEARCH");
+  const trimmed = query.trim();
+  if (trimmed) params.set("keywords", trimmed);
+  return `https://www.linkedin.com/search/results/people/?${params.toString()}`;
+}
+
+/** Sales Navigator: CURRENT_TITLE filter only (OR across titles). No keyword AND stack. */
+export function buildBranchSalesNavigatorUrl(config: LinkedInSearchConfig): string {
+  const titles = dedupe(config.currentJobTitles);
+  const titleFilter = buildSalesNavigatorTitleFilter(titles);
+  if (!titleFilter) {
+    return "https://www.linkedin.com/sales/search/people";
+  }
+  const params = new URLSearchParams();
+  params.set(
+    "query",
+    `(spellCorrectionEnabled:true,filters:List(${titleFilter}))`
+  );
+  return `https://www.linkedin.com/sales/search/people?${params.toString()}`;
+}
 /** Build a search URL that includes native facets when set. */
 export function buildSearchUrl(
   target: LinkedInTarget,
   query: string,
   config?: LinkedInSearchConfig,
-  options?: { mode?: SearchMode; includeLowSignal?: boolean }
+  options: SearchUrlOptions = {}
 ): string {
+  const branchLink = options.branchLink ?? false;
+
+  if (branchLink && target === "people") {
+    return buildBranchPeopleSearchUrl(query);
+  }
+
   const bucketIds = config ? getExperienceBucketIds(config) : [];
   const schools = config ? getSchoolNames(config) : [];
   const trimmed = query.trim();
@@ -262,8 +303,9 @@ export function buildSearchUrl(
       return config
         ? buildSalesNavigatorUrl(
             config,
-            options?.mode ?? "precision",
-            options?.includeLowSignal ?? false
+            options.mode ?? "precision",
+            options.includeLowSignal ?? false,
+            { branchLink }
           )
         : trimmed
           ? `https://www.linkedin.com/sales/search/people?${new URLSearchParams({ keywords: trimmed }).toString()}`
@@ -271,7 +313,7 @@ export function buildSearchUrl(
     case "recruiter": {
       const params = new URLSearchParams();
       if (trimmed) params.set("keywords", trimmed);
-      if (hasFacets) {
+      if (hasFacets && config && !branchLink) {
         params.set("query", buildClassicQueryObject(trimmed, bucketIds, schools));
       }
       const qs = params.toString();
@@ -282,7 +324,8 @@ export function buildSearchUrl(
       const params = new URLSearchParams();
       params.set("origin", "FACETED_SEARCH");
       if (trimmed) params.set("keywords", trimmed);
-      if (hasFacets) {
+      // Avoid school+years facets AND'd on top of keyword Boolean — causes zero results.
+      if (hasFacets && config && !branchLink) {
         params.set("query", buildClassicQueryObject(trimmed, bucketIds, schools));
       }
       return `https://www.linkedin.com/search/results/people/?${params.toString()}`;

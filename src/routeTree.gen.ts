@@ -17,16 +17,20 @@ import { Route as RelationshipsRouteImport } from './routes/relationships'
 import { Route as RecruitingRouteImport } from './routes/recruiting'
 import { Route as RealEstateRouteImport } from './routes/real-estate'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as ProfilesRouteImport } from './routes/profiles'
 import { Route as PredictionsRouteImport } from './routes/predictions'
+import { Route as OutreachRouteImport } from './routes/outreach'
 import { Route as MortgageRouteImport } from './routes/mortgage'
 import { Route as MarketingRouteImport } from './routes/marketing'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as InsuranceRouteImport } from './routes/insurance'
+import { Route as HermesRouteImport } from './routes/hermes'
 import { Route as FlavorsRouteImport } from './routes/flavors'
 import { Route as ExperimentsRouteImport } from './routes/experiments'
 import { Route as EntitiesRouteImport } from './routes/entities'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as BrowserWorkersRouteImport } from './routes/browser-workers'
+import { Route as AutomationRouteImport } from './routes/automation'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EntitiesIndexRouteImport } from './routes/entities.index'
@@ -38,9 +42,12 @@ import { Route as RecruitingPipelineRouteImport } from './routes/recruiting_.pip
 import { Route as RecruitingLinkedinRouteImport } from './routes/recruiting_.linkedin'
 import { Route as RecruitingJobsRouteImport } from './routes/recruiting_.jobs'
 import { Route as RecruitingCompareRouteImport } from './routes/recruiting_.compare'
+import { Route as ProfilesIdRouteImport } from './routes/profiles.$id'
 import { Route as FlavorsNewRouteImport } from './routes/flavors.new'
 import { Route as EntitiesDemoRouteImport } from './routes/entities.demo'
 import { Route as EntitiesKindRouteImport } from './routes/entities.$kind'
+import { Route as RecruitingLinkedinIndexRouteImport } from './routes/recruiting_.linkedin.index'
+import { Route as RecruitingLinkedinBranchesRouteImport } from './routes/recruiting_.linkedin.branches'
 import { Route as RecruitingCandidatesIdRouteImport } from './routes/recruiting_.candidates.$id'
 import { Route as EntitiesKindIdRouteImport } from './routes/entities.$kind.$id'
 
@@ -84,9 +91,19 @@ const ProjectsRoute = ProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfilesRoute = ProfilesRouteImport.update({
+  id: '/profiles',
+  path: '/profiles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PredictionsRoute = PredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OutreachRoute = OutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MortgageRoute = MortgageRouteImport.update({
@@ -107,6 +124,11 @@ const KnowledgeRoute = KnowledgeRouteImport.update({
 const InsuranceRoute = InsuranceRouteImport.update({
   id: '/insurance',
   path: '/insurance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HermesRoute = HermesRouteImport.update({
+  id: '/hermes',
+  path: '/hermes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FlavorsRoute = FlavorsRouteImport.update({
@@ -132,6 +154,11 @@ const CrmRoute = CrmRouteImport.update({
 const BrowserWorkersRoute = BrowserWorkersRouteImport.update({
   id: '/browser-workers',
   path: '/browser-workers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutomationRoute = AutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AffiliateRoute = AffiliateRouteImport.update({
@@ -189,6 +216,11 @@ const RecruitingCompareRoute = RecruitingCompareRouteImport.update({
   path: '/recruiting/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfilesIdRoute = ProfilesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ProfilesRoute,
+} as any)
 const FlavorsNewRoute = FlavorsNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -204,6 +236,17 @@ const EntitiesKindRoute = EntitiesKindRouteImport.update({
   path: '/$kind',
   getParentRoute: () => EntitiesRoute,
 } as any)
+const RecruitingLinkedinIndexRoute = RecruitingLinkedinIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RecruitingLinkedinRoute,
+} as any)
+const RecruitingLinkedinBranchesRoute =
+  RecruitingLinkedinBranchesRouteImport.update({
+    id: '/branches',
+    path: '/branches',
+    getParentRoute: () => RecruitingLinkedinRoute,
+  } as any)
 const RecruitingCandidatesIdRoute = RecruitingCandidatesIdRouteImport.update({
   id: '/recruiting_/candidates/$id',
   path: '/recruiting/candidates/$id',
@@ -218,16 +261,20 @@ const EntitiesKindIdRoute = EntitiesKindIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/affiliate': typeof AffiliateRoute
+  '/automation': typeof AutomationRoute
   '/browser-workers': typeof BrowserWorkersRoute
   '/crm': typeof CrmRoute
   '/entities': typeof EntitiesRouteWithChildren
   '/experiments': typeof ExperimentsRoute
   '/flavors': typeof FlavorsRouteWithChildren
+  '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
+  '/outreach': typeof OutreachRoute
   '/predictions': typeof PredictionsRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
   '/recruiting': typeof RecruitingRoute
@@ -239,9 +286,10 @@ export interface FileRoutesByFullPath {
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
   '/entities/demo': typeof EntitiesDemoRoute
   '/flavors/new': typeof FlavorsNewRoute
+  '/profiles/$id': typeof ProfilesIdRoute
   '/recruiting/compare': typeof RecruitingCompareRoute
   '/recruiting/jobs': typeof RecruitingJobsRoute
-  '/recruiting/linkedin': typeof RecruitingLinkedinRoute
+  '/recruiting/linkedin': typeof RecruitingLinkedinRouteWithChildren
   '/recruiting/pipeline': typeof RecruitingPipelineRoute
   '/recruiting/results': typeof RecruitingResultsRoute
   '/recruiting/search': typeof RecruitingSearchRoute
@@ -250,19 +298,25 @@ export interface FileRoutesByFullPath {
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$kind/$id': typeof EntitiesKindIdRoute
   '/recruiting/candidates/$id': typeof RecruitingCandidatesIdRoute
+  '/recruiting/linkedin/branches': typeof RecruitingLinkedinBranchesRoute
+  '/recruiting/linkedin/': typeof RecruitingLinkedinIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/affiliate': typeof AffiliateRoute
+  '/automation': typeof AutomationRoute
   '/browser-workers': typeof BrowserWorkersRoute
   '/crm': typeof CrmRoute
   '/experiments': typeof ExperimentsRoute
   '/flavors': typeof FlavorsRouteWithChildren
+  '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
+  '/outreach': typeof OutreachRoute
   '/predictions': typeof PredictionsRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
   '/recruiting': typeof RecruitingRoute
@@ -274,9 +328,9 @@ export interface FileRoutesByTo {
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
   '/entities/demo': typeof EntitiesDemoRoute
   '/flavors/new': typeof FlavorsNewRoute
+  '/profiles/$id': typeof ProfilesIdRoute
   '/recruiting/compare': typeof RecruitingCompareRoute
   '/recruiting/jobs': typeof RecruitingJobsRoute
-  '/recruiting/linkedin': typeof RecruitingLinkedinRoute
   '/recruiting/pipeline': typeof RecruitingPipelineRoute
   '/recruiting/results': typeof RecruitingResultsRoute
   '/recruiting/search': typeof RecruitingSearchRoute
@@ -285,21 +339,27 @@ export interface FileRoutesByTo {
   '/entities': typeof EntitiesIndexRoute
   '/entities/$kind/$id': typeof EntitiesKindIdRoute
   '/recruiting/candidates/$id': typeof RecruitingCandidatesIdRoute
+  '/recruiting/linkedin/branches': typeof RecruitingLinkedinBranchesRoute
+  '/recruiting/linkedin': typeof RecruitingLinkedinIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/affiliate': typeof AffiliateRoute
+  '/automation': typeof AutomationRoute
   '/browser-workers': typeof BrowserWorkersRoute
   '/crm': typeof CrmRoute
   '/entities': typeof EntitiesRouteWithChildren
   '/experiments': typeof ExperimentsRoute
   '/flavors': typeof FlavorsRouteWithChildren
+  '/hermes': typeof HermesRoute
   '/insurance': typeof InsuranceRoute
   '/knowledge': typeof KnowledgeRoute
   '/marketing': typeof MarketingRoute
   '/mortgage': typeof MortgageRoute
+  '/outreach': typeof OutreachRoute
   '/predictions': typeof PredictionsRoute
+  '/profiles': typeof ProfilesRouteWithChildren
   '/projects': typeof ProjectsRoute
   '/real-estate': typeof RealEstateRoute
   '/recruiting': typeof RecruitingRoute
@@ -311,9 +371,10 @@ export interface FileRoutesById {
   '/entities/$kind': typeof EntitiesKindRouteWithChildren
   '/entities/demo': typeof EntitiesDemoRoute
   '/flavors/new': typeof FlavorsNewRoute
+  '/profiles/$id': typeof ProfilesIdRoute
   '/recruiting_/compare': typeof RecruitingCompareRoute
   '/recruiting_/jobs': typeof RecruitingJobsRoute
-  '/recruiting_/linkedin': typeof RecruitingLinkedinRoute
+  '/recruiting_/linkedin': typeof RecruitingLinkedinRouteWithChildren
   '/recruiting_/pipeline': typeof RecruitingPipelineRoute
   '/recruiting_/results': typeof RecruitingResultsRoute
   '/recruiting_/search': typeof RecruitingSearchRoute
@@ -322,22 +383,28 @@ export interface FileRoutesById {
   '/entities/': typeof EntitiesIndexRoute
   '/entities/$kind/$id': typeof EntitiesKindIdRoute
   '/recruiting_/candidates/$id': typeof RecruitingCandidatesIdRoute
+  '/recruiting_/linkedin/branches': typeof RecruitingLinkedinBranchesRoute
+  '/recruiting_/linkedin/': typeof RecruitingLinkedinIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/affiliate'
+    | '/automation'
     | '/browser-workers'
     | '/crm'
     | '/entities'
     | '/experiments'
     | '/flavors'
+    | '/hermes'
     | '/insurance'
     | '/knowledge'
     | '/marketing'
     | '/mortgage'
+    | '/outreach'
     | '/predictions'
+    | '/profiles'
     | '/projects'
     | '/real-estate'
     | '/recruiting'
@@ -349,6 +416,7 @@ export interface FileRouteTypes {
     | '/entities/$kind'
     | '/entities/demo'
     | '/flavors/new'
+    | '/profiles/$id'
     | '/recruiting/compare'
     | '/recruiting/jobs'
     | '/recruiting/linkedin'
@@ -360,19 +428,25 @@ export interface FileRouteTypes {
     | '/entities/'
     | '/entities/$kind/$id'
     | '/recruiting/candidates/$id'
+    | '/recruiting/linkedin/branches'
+    | '/recruiting/linkedin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/affiliate'
+    | '/automation'
     | '/browser-workers'
     | '/crm'
     | '/experiments'
     | '/flavors'
+    | '/hermes'
     | '/insurance'
     | '/knowledge'
     | '/marketing'
     | '/mortgage'
+    | '/outreach'
     | '/predictions'
+    | '/profiles'
     | '/projects'
     | '/real-estate'
     | '/recruiting'
@@ -384,9 +458,9 @@ export interface FileRouteTypes {
     | '/entities/$kind'
     | '/entities/demo'
     | '/flavors/new'
+    | '/profiles/$id'
     | '/recruiting/compare'
     | '/recruiting/jobs'
-    | '/recruiting/linkedin'
     | '/recruiting/pipeline'
     | '/recruiting/results'
     | '/recruiting/search'
@@ -395,20 +469,26 @@ export interface FileRouteTypes {
     | '/entities'
     | '/entities/$kind/$id'
     | '/recruiting/candidates/$id'
+    | '/recruiting/linkedin/branches'
+    | '/recruiting/linkedin'
   id:
     | '__root__'
     | '/'
     | '/affiliate'
+    | '/automation'
     | '/browser-workers'
     | '/crm'
     | '/entities'
     | '/experiments'
     | '/flavors'
+    | '/hermes'
     | '/insurance'
     | '/knowledge'
     | '/marketing'
     | '/mortgage'
+    | '/outreach'
     | '/predictions'
+    | '/profiles'
     | '/projects'
     | '/real-estate'
     | '/recruiting'
@@ -420,6 +500,7 @@ export interface FileRouteTypes {
     | '/entities/$kind'
     | '/entities/demo'
     | '/flavors/new'
+    | '/profiles/$id'
     | '/recruiting_/compare'
     | '/recruiting_/jobs'
     | '/recruiting_/linkedin'
@@ -431,21 +512,27 @@ export interface FileRouteTypes {
     | '/entities/'
     | '/entities/$kind/$id'
     | '/recruiting_/candidates/$id'
+    | '/recruiting_/linkedin/branches'
+    | '/recruiting_/linkedin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AffiliateRoute: typeof AffiliateRoute
+  AutomationRoute: typeof AutomationRoute
   BrowserWorkersRoute: typeof BrowserWorkersRoute
   CrmRoute: typeof CrmRoute
   EntitiesRoute: typeof EntitiesRouteWithChildren
   ExperimentsRoute: typeof ExperimentsRoute
   FlavorsRoute: typeof FlavorsRouteWithChildren
+  HermesRoute: typeof HermesRoute
   InsuranceRoute: typeof InsuranceRoute
   KnowledgeRoute: typeof KnowledgeRoute
   MarketingRoute: typeof MarketingRoute
   MortgageRoute: typeof MortgageRoute
+  OutreachRoute: typeof OutreachRoute
   PredictionsRoute: typeof PredictionsRoute
+  ProfilesRoute: typeof ProfilesRouteWithChildren
   ProjectsRoute: typeof ProjectsRoute
   RealEstateRoute: typeof RealEstateRoute
   RecruitingRoute: typeof RecruitingRoute
@@ -456,7 +543,7 @@ export interface RootRouteChildren {
   WorkersRoute: typeof WorkersRoute
   RecruitingCompareRoute: typeof RecruitingCompareRoute
   RecruitingJobsRoute: typeof RecruitingJobsRoute
-  RecruitingLinkedinRoute: typeof RecruitingLinkedinRoute
+  RecruitingLinkedinRoute: typeof RecruitingLinkedinRouteWithChildren
   RecruitingPipelineRoute: typeof RecruitingPipelineRoute
   RecruitingResultsRoute: typeof RecruitingResultsRoute
   RecruitingSearchRoute: typeof RecruitingSearchRoute
@@ -523,11 +610,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profiles': {
+      id: '/profiles'
+      path: '/profiles'
+      fullPath: '/profiles'
+      preLoaderRoute: typeof ProfilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/predictions': {
       id: '/predictions'
       path: '/predictions'
       fullPath: '/predictions'
       preLoaderRoute: typeof PredictionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outreach': {
+      id: '/outreach'
+      path: '/outreach'
+      fullPath: '/outreach'
+      preLoaderRoute: typeof OutreachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mortgage': {
@@ -556,6 +657,13 @@ declare module '@tanstack/react-router' {
       path: '/insurance'
       fullPath: '/insurance'
       preLoaderRoute: typeof InsuranceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hermes': {
+      id: '/hermes'
+      path: '/hermes'
+      fullPath: '/hermes'
+      preLoaderRoute: typeof HermesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/flavors': {
@@ -591,6 +699,13 @@ declare module '@tanstack/react-router' {
       path: '/browser-workers'
       fullPath: '/browser-workers'
       preLoaderRoute: typeof BrowserWorkersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/automation': {
+      id: '/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof AutomationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/affiliate': {
@@ -670,6 +785,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecruitingCompareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profiles/$id': {
+      id: '/profiles/$id'
+      path: '/$id'
+      fullPath: '/profiles/$id'
+      preLoaderRoute: typeof ProfilesIdRouteImport
+      parentRoute: typeof ProfilesRoute
+    }
     '/flavors/new': {
       id: '/flavors/new'
       path: '/new'
@@ -690,6 +812,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/entities/$kind'
       preLoaderRoute: typeof EntitiesKindRouteImport
       parentRoute: typeof EntitiesRoute
+    }
+    '/recruiting_/linkedin/': {
+      id: '/recruiting_/linkedin/'
+      path: '/'
+      fullPath: '/recruiting/linkedin/'
+      preLoaderRoute: typeof RecruitingLinkedinIndexRouteImport
+      parentRoute: typeof RecruitingLinkedinRoute
+    }
+    '/recruiting_/linkedin/branches': {
+      id: '/recruiting_/linkedin/branches'
+      path: '/branches'
+      fullPath: '/recruiting/linkedin/branches'
+      preLoaderRoute: typeof RecruitingLinkedinBranchesRouteImport
+      parentRoute: typeof RecruitingLinkedinRoute
     }
     '/recruiting_/candidates/$id': {
       id: '/recruiting_/candidates/$id'
@@ -747,19 +883,48 @@ const FlavorsRouteChildren: FlavorsRouteChildren = {
 const FlavorsRouteWithChildren =
   FlavorsRoute._addFileChildren(FlavorsRouteChildren)
 
+interface ProfilesRouteChildren {
+  ProfilesIdRoute: typeof ProfilesIdRoute
+}
+
+const ProfilesRouteChildren: ProfilesRouteChildren = {
+  ProfilesIdRoute: ProfilesIdRoute,
+}
+
+const ProfilesRouteWithChildren = ProfilesRoute._addFileChildren(
+  ProfilesRouteChildren,
+)
+
+interface RecruitingLinkedinRouteChildren {
+  RecruitingLinkedinBranchesRoute: typeof RecruitingLinkedinBranchesRoute
+  RecruitingLinkedinIndexRoute: typeof RecruitingLinkedinIndexRoute
+}
+
+const RecruitingLinkedinRouteChildren: RecruitingLinkedinRouteChildren = {
+  RecruitingLinkedinBranchesRoute: RecruitingLinkedinBranchesRoute,
+  RecruitingLinkedinIndexRoute: RecruitingLinkedinIndexRoute,
+}
+
+const RecruitingLinkedinRouteWithChildren =
+  RecruitingLinkedinRoute._addFileChildren(RecruitingLinkedinRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AffiliateRoute: AffiliateRoute,
+  AutomationRoute: AutomationRoute,
   BrowserWorkersRoute: BrowserWorkersRoute,
   CrmRoute: CrmRoute,
   EntitiesRoute: EntitiesRouteWithChildren,
   ExperimentsRoute: ExperimentsRoute,
   FlavorsRoute: FlavorsRouteWithChildren,
+  HermesRoute: HermesRoute,
   InsuranceRoute: InsuranceRoute,
   KnowledgeRoute: KnowledgeRoute,
   MarketingRoute: MarketingRoute,
   MortgageRoute: MortgageRoute,
+  OutreachRoute: OutreachRoute,
   PredictionsRoute: PredictionsRoute,
+  ProfilesRoute: ProfilesRouteWithChildren,
   ProjectsRoute: ProjectsRoute,
   RealEstateRoute: RealEstateRoute,
   RecruitingRoute: RecruitingRoute,
@@ -770,7 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkersRoute: WorkersRoute,
   RecruitingCompareRoute: RecruitingCompareRoute,
   RecruitingJobsRoute: RecruitingJobsRoute,
-  RecruitingLinkedinRoute: RecruitingLinkedinRoute,
+  RecruitingLinkedinRoute: RecruitingLinkedinRouteWithChildren,
   RecruitingPipelineRoute: RecruitingPipelineRoute,
   RecruitingResultsRoute: RecruitingResultsRoute,
   RecruitingSearchRoute: RecruitingSearchRoute,

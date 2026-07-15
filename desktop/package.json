@@ -1,0 +1,49 @@
+{
+  "name": "alyson-desktop-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Alyson Desktop Agent — local browser automation runtime",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "dev:electron": "concurrently -k \"npm run dev\" \"wait-on http://127.0.0.1:8787/alyson/health && electron .\"",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/index.js",
+    "package": "npm run build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.5",
+    "@types/ws": "^8.18.1",
+    "concurrently": "^9.1.2",
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "dev.alyson.desktop",
+    "productName": "Alyson Desktop Agent",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "AlysonDesktopAgent-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    }
+  }
+}
